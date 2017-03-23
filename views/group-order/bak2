@@ -1,0 +1,111 @@
+<?php
+
+/* @var $this yii\web\View */
+/* @var $item app\models\Item */
+/* @var $user app\models\Customer */
+/* @var $order app\models\Order */
+
+use yii\helpers\Html;
+use yii\bootstrap\ActiveForm;
+
+$this->title = '开团 — ' . $item->name;
+
+$amount = $order->leader_amount ? $order->leader_amount : 1;
+$setMaxAmount = $order->max_amount !== null;
+$maxAmount = $setMaxAmount ? $order->max_amount : 1;
+
+$duration = new DateInterval('P' . $item->delivery_duration . 'D');
+$arrivalStart = (new DateTime($item->delivery_date_start))->add($duration);
+$arrivalEnd = (new DateTime($item->delivery_date_end))->add($duration);
+$arrivalStart = $arrivalStart->format('Y-m-d');
+$arrivalEnd = $arrivalEnd->format('Y-m-d');
+
+$submitUrl = str_replace('create', 'submit', Yii::$app->request->url);
+$formatter = \Yii::$app->formatter;
+?>
+
+<div class="container store-viewport">
+    <?= $this->render('/item/_photo.php', [
+        'model' => $item,
+    ]) ?>
+    
+    <div class="row bg-info separator"></div>
+
+    <?php $form = ActiveForm::begin(['id' => "order-detail", "action" => $submitUrl]); ?>
+    <div class="row">
+        <div class="amount-label col-xs-3">订购数量</div>
+        <div class="col-xs-6">
+            <?= Html::textInput('amount', $amount,
+                                ['id' => 'amount',
+                                 'data-min' => 1, 'data-max' => $item->amount]) ?>
+        </div>
+        <div id='total' class="amount-label col-xs-3">
+            <small>库存<?= Html::encode($item->amount) ?></small>
+        </div>
+    </div>
+    <div class="row">
+        <div class="amount-label col-xs-3">封顶数量</div>
+        <div class="col-xs-6">
+            <div class="input-group">
+                <span class="input-group-addon">
+                    <?= Html::checkbox("", $setMaxAmount,
+                                       ['id' => 'max-amount-flip']) ?>
+                </span>
+                <?= Html::textInput('max-amount', $maxAmount,
+                                    ['id' => 'max-amount',
+                                     'disabled' => !$setMaxAmount,
+                                     'data-min' => $item->threshold,
+                                     'data-max' => $item->amount]) ?>
+            </div>
+        </div>
+        <div id='total' class="amount-label col-xs-3">
+            <small>最低要求<?= Html::encode($item->threshold) ?></small>
+        </div>
+    </div>
+
+    <div class="row bg-info separator"></div>
+    
+    <div class="row">
+        <div class="amount-label col-xs-3">送货地址</div>
+        <div class="col-xs-9">
+            <?= $form->beginField($order, 'delivery_address_id') ?>
+            <div class="input-group">
+                <?= Html::dropDownList("delivery-address",
+                                       $order->delivery_address_id,
+                                       $user->addressOptionArray(),
+                                       ['class' => "form-control"]) ?>
+                <p class="help-block help-block-error">asdf</p>
+                <span class="input-group-btn">
+                    <button class="btn btn-success" type="submit" name="add-address" value="1">
+                        <span class="glyphicon glyphicon-plus-sign"></span>
+                    </button>
+                </span>
+            </div>
+            <?= $form->endField() ?>
+        </div>
+    </div>
+    <div class="row">
+        <div class="amount-label col-xs-3">到货日期</div>
+        <div class="col-xs-9">
+            <?= Html::beginTag('div', ['id' => 'arrival-date',
+                                       'class' => 'input-group date',
+                                       'last-date' => $order->arrival_date,
+                                       'date-start' => $arrivalStart,
+                                       'date-end' => $arrivalEnd]) ?>
+            <input type="text" name="arrival-date" class="form-control">
+            <div class="input-group-addon">
+                <span class="glyphicon glyphicon-calendar"></span>
+            </div>
+            <?= Html::endTag('div') ?>
+        </div>
+    </div>
+
+    <div class="btn-group btn-group-justified">
+        <div class="btn-group" role="group">
+            <button type="submit" name="submit-order" value="1" class="btn btn-danger">提交订单</button>
+        </div>
+    </div>
+
+    <?php ActiveForm::end(); ?>
+
+</div>
