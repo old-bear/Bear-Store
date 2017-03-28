@@ -53,24 +53,22 @@ class CommonUtility extends Object
     public function fetchJsApiTicket(string $ak)
     {
         $url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?'
-              . 'type=jsapi'
-              . '&access_token=' . $ak;
+             . 'type=jsapi&access_token=' . $ak;
         return self::sendHttpRequest('GET', $url, 'JSAPI', true);
     }
   
     public function fetchQrTicket(string $ak, string $id)
     {
-        $url = 'https://api.weixin.qq.com/cgi-bin/qrcode/create?'
-              . 'access_token=' . $ak;
-        $data = array(
+        $url = 'https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=' . $ak;
+        $data = [
             'expire_seconds' => 2592000,
             'action_name' => 'QR_SCENE',
-            'action_info' => array(
-                'scene' => array(
+            'action_info' => [
+                'scene' => [
                     'scene_id' => $id,
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         return self::sendHttpRequest('POST', $url, 'QRCODE', true, 1000, 0, [], $data, 'json');
     }
   
@@ -218,7 +216,47 @@ class CommonUtility extends Object
         }
     }
   
+    public static function array2xml(array $data,
+                                     \SimpleXMLElement &$node = null,
+                                     array $cdataKey = [])
+    {
+        // Compare with null explicitly since node
+        // with empty tags is regarded as false too
+        if ($node == null) {
+            $node = new \SimpleXMLElement('<xml></xml>');
+        }
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $subnode = $node->addChild($key);
+                self::array2xml($value, $subnode, $cdataKey);
+            } else {
+                if (in_array($key, $cdataKey)) {
+                    $node->addChild($key, "![CDATA[$value]]");
+                } else {
+                    $node->addChild($key, htmlspecialchars($value));
+                }
+            }
+        }
+        return $node;
+    }
+
+    public static function xml2array(string $xmlStr)
+    {
+        return (array)simplexml_load_string($xmlStr,
+                                            'SimpleXMLElement', LIBXML_NOCDATA);  
+    }
+    
     public static function createNonceStr($length = 16)
+    {
+        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        $str = "";
+        for ($i = 0; $i < $length; $i++) {
+          $str .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
+        }
+        return $str;
+    }
+  
+    public static function generateNonce($length = 16)
     {
         $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         $str = "";
@@ -258,7 +296,7 @@ class CommonUtility extends Object
                                            string $logPrefix = 'HTTP',
                                            bool $forceJsonParse = false,
                                            int $timeoutMs = 1000, int $retry = 0,
-                                           array $reqHeader = [], array $reqBody = [],
+                                           array $reqHeader = [], $reqBody = [],
                                            string $reqDataFormant = 'json')                                           
     {
         $ch = curl_init($url);
@@ -284,7 +322,7 @@ class CommonUtility extends Object
             // Assume using JSON format
             if ($reqDataFormant == 'xml') {
                 $reqHeader['Content-Type'] = 'text/xml';
-                $options[CURLOPT_POSTFIELDS] = $reqBody['xml']->asXML();
+                $options[CURLOPT_POSTFIELDS] = $reqBody->asXML();
             } else if ($reqDataFormant == 'json') {
                 $reqHeader['Content-Type'] = 'application/json';
                 $options[CURLOPT_POSTFIELDS] = json_encode($reqBody);
@@ -302,7 +340,7 @@ class CommonUtility extends Object
 
         Yii::trace("[${logPrefix}_REQUEST] [URL=$url]"
                    . ($reqHeader ? ' [HEADER=' . VarDumper::export($reqHeader) . ']' : '')
-                   . ($reqBody ? ' [BODY=' . VarDumper::export($reqBody) . ']' : ''), 'service');
+                   . ($reqBody ? ' [BODY=' . $options[CURLOPT_POSTFIELDS] . ']' : ''), 'service');
         for ($i = 0; $i <= $retry; ++$i) {
             $start = microtime(true);
             $response = curl_exec($ch);
@@ -338,10 +376,6 @@ class CommonUtility extends Object
                 }
             }
             break;
-        }
-
-        if (!isset($ret['body'])) {
-            throw new InternalException();
         }
         return $ret;
     }

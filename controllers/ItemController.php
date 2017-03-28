@@ -5,14 +5,13 @@ namespace app\controllers;
 use Yii;
 use app\models\Item;
 use app\models\ItemSearch;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
 /**
  * ItemController implements the CRUD actions for Item model.
  */
-class ItemController extends Controller
+class ItemController extends ExternalController
 {
     public $layout = 'base';
 

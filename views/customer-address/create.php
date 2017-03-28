@@ -9,6 +9,83 @@ use app\models\Area;
 
 $this->title = '添加收货地址';
 
+$selectJs = <<<EOF
+$('#address-selection').cascadingDropdown({
+    selectBoxes: [
+        {
+            selector: '#province',
+            source: function(request, response) {
+                $.getJSON('/area/list-province', request, function(data) {
+                    data.unshift({label: '', value: 0, selected: true});
+                    response(data);
+                });
+            }
+        },
+        {
+            selector: '#city',
+            requires: ['#province'],
+            source: function(request, response) {
+                $.getJSON('/area/list-city', request, function(data) {
+                    if (data.length > 0) {
+                        data.unshift({label: '', value: 0, selected: true});
+                    }
+                    response(data);
+                });
+            }
+        },
+        {
+            selector: '#district',
+            requires: ['#city'],
+            source: function(request, response) {
+                $.getJSON('/area/list-district', request, function(data) {
+                    response(data);
+                });
+            }
+        },
+    ],
+    onReady: function() {
+        if ($('#district-input').length > 0) {
+            $('#province').val($('input[name=province-input]').val()).trigger('change');
+            setTimeout(function() {
+                $('#city').val($('input[name=city-input]').val()).trigger('change');
+            }, 1000);
+            setTimeout(function() {
+                $('#district').val($('input[name=district-input]').val()).trigger('change');
+            }, 1000);
+        }
+    }
+});
+EOF;
+$this->registerJs($selectJs);
+
+$addressCss = <<<EOF
+#address-form, #user-form {
+    margin-top: 10px;
+}
+
+#address-form .col-xs-3, #user-form .col-xs-3 {
+    padding-left: 10px;
+    padding-right: 0px;
+}
+
+#address-form .control-label, #user-form .control-label {
+    padding-top: 5px;
+    margin-bottom: 0px;
+    font-weight: normal;
+    color: grey;
+}
+
+#address-form .row, #user-form .row {
+    margin-bottom: 10px;
+}
+
+#address-selection .row:last-child {
+    margin-top: -5px;
+    margin-bottom: 5px;
+}
+EOF;
+$this->registerCss($addressCss);
+
 ?>
 
 <div class="container store-viewport">
@@ -73,7 +150,7 @@ $this->title = '添加收货地址';
             <label class="control-label">联系电话</label>
         </div>
         <div class="col-xs-9">
-            <?= $form->field($model, 'contact_phone')->label(false) ?>
+            <?= $form->field($model, 'contact_phone')->input('number')->label(false) ?>
         </div>
     </div>
 

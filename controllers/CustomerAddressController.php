@@ -16,31 +16,31 @@ use yii\filters\VerbFilter;
 class CustomerAddressController extends ExternalController
 {
     public $layout = 'base';
+
     /**
      * @inheritdoc
      */
-    /// public function behaviors()
-    /// {
-    ///     return [
-    ///         'verbs' => [
-    ///             'class' => VerbFilter::className(),
-    ///             'actions' => [
-    ///                 'delete' => ['POST'],
-    ///             ],
-    ///         ],
-    ///     ];
-    /// }
-
-    public function actionCreate($redirectUrl = '')
+    public function behaviors()
     {
+        return [
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'create' => ['get', 'post'],
+                ],
+            ],
+        ];
+    }
+
+    public function actionCreate($redirectUrl = '/profile/address-management')
+    {
+        $request = Yii::$app->request;
         $user = $this->login();
         $model = new CustomerAddress();
-        $post = Yii::$app->request->post();
-        if ($post) {
-            $model->customer_id = $user->id;
-            if ($model->load($post) && $model->save()) {
-                return $this->redirect($redirectUrl);
-            }
+        $model->customer_id = $user->id;
+
+        if ($request->isPost && $model->load($request->post()) && $model->save()) {
+            return $this->redirect($redirectUrl);
         }
         return $this->render('create', [
             'model' => $model,

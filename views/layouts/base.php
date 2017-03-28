@@ -4,18 +4,14 @@
 /* @var $content string */
 
 use app\assets\AppAsset;
-use app\assets\CountdownAsset;
 use app\assets\TouchSpinAsset;
 use app\assets\DatepickerAsset;
 use app\assets\CascadingDropdownAsset;
-use app\assets\WeAsset;
 use yii\helpers\Html;
 
-CountdownAsset::register($this);
 TouchSpinAsset::register($this);
 DatepickerAsset::register($this);
 CascadingDropdownAsset::register($this);
-// WeAsset::register($this);
 AppAsset::register($this);
 
 $title = $this->title ? $this->title : '从前有个团';

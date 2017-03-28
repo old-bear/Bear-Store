@@ -4,8 +4,9 @@ namespace app\controllers;
 
 use Yii;
 use yii\helpers\Url;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\ConflictHttpException;
+use yii\filters\VerbFilter;
 
 use app\models\Item;
 use app\models\Customer;
@@ -13,7 +14,6 @@ use app\models\CustomerOrder;
 use app\models\GroupOrder;
 use app\models\AccessToken;
 use app\models\JsapiTicket;
-use app\components\LoginBehavior;
 use app\controllers\ExternalController;
 
 
@@ -27,65 +27,64 @@ class CustomerOrderController extends ExternalController
     /**
      * @inheritdoc
      */
-    /// public function behaviors()
-    /// {
-    ///     return [
-    ///     ];
-    /// }
-
-    public function actionCreate($orderID, $amount = null)
+    public function behaviors()
     {
-        $groupOrder = GroupOrder::findOne($orderID);
-        $item = $groupOrder->item;
-        $user = $this->login(true);
-
-        $customerOrder = $this->_fetchLastOrder();
-        $customerOrder->item_id = $item->id;
-        $customerOrder->customer_id = $user->id;
-        $customerOrder->group_order_id = $groupOrder->id;
-        $customerOrder->amount = $amount ? $amount : 1;
-        $customerOrder->price = $customerOrder->amount * $item->price;
- 
-        return $this->render('create', [
-            'item' => $item,
-            'user' => $user,
-            'order' => $customerOrder,
-        ]);
+        return [
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'create' => ['post'],
+                ],
+            ],
+        ];
     }
 
-    public function actionSubmit($orderID)
+    public function actionCreate($groupOrderID)
     {
         $request = Yii::$app->request;
-        $session = Yii::$app->session;
-
-        $groupOrder = GroupOrder::findOne($orderID);
-        $item = $groupOrder->item;
         $user = $this->login();
+        if (!$user->registered()) {
+            return $this->redirect(['customer/create', 
+                                    'redirectUrl' => $request->absoluteUrl]);
+        }
 
-        $customerOrder = $this->_fetchLastOrder();
+        $amount = $request->post('amount');
+        if (!$amount) {
+            throw new BadRequestHttpException('请指定数量');
+        }
+        
+        $groupOrder = GroupOrder::findOne($groupOrderID);
+        if ($groupOrder->max_amount &&
+            $groupOrder->max_amount
+            < $groupOrder->getCustomerOrders()->sum('amount') + $amount) {
+            throw new ConflictHttpException('抱歉，该团上限已满');
+        }
+
+        $item = $groupOrder->item;
+        if ($amount > $item->amount) {
+            throw new ConflictHttpException('抱歉，该商品已断货');
+        }
+        $item->amount -= $amount;
+        $item->save();
+        
+        $customerOrder = new CustomerOrder();
         $customerOrder->item_id = $item->id;
         $customerOrder->customer_id = $user->id;
         $customerOrder->group_order_id = $groupOrder->id;
-        $customerOrder->amount = $request->post('amount');
+        $customerOrder->amount = $amount;
         $customerOrder->price = $customerOrder->amount * $item->price;
-      
-        $saved = $customerOrder->save();
-      
-        $post = $request->post('submit-customer-order');
+        $customerOrder->status = 'creating';
+        $customerOrder->save();      // To generate id
 
-        if ($post) {
+        $pay = Yii::$app->wepay->unifiedOrder($customerOrder,
+                                              $request->getUserIP(), $user->open_id);
+        $customerOrder->pay_id = $pay['prepay_id'];
+        $expireTime = (new \DateTime())->add(new \DateInterval('PT7200S'));
+        $customerOrder->expire_time = $expireTime->format('Y-m-d H:i:s');
+        $customerOrder->status = 'created';
+        $customerOrder->save();
             
-            if ($item->amount > $customerOrder->amount && $saved) {
-                $item->amount -= $customerOrder->amount;
-                $item->save();
-                return $this->redirect(['/customer-order/pay',
-                                        'id' => $customerOrder->id]);
-            } 
-        } 
-      
-        return $this->render('create', [
-            'item' => $item,
-            'user' => $user,
+        return $this->render('pay', [
             'order' => $customerOrder,
         ]);
     }
@@ -178,18 +177,20 @@ class CustomerOrderController extends ExternalController
         ]);
     }
   
-    public static function _fetchPrepayId($order, $user_ip)
+    private static function _fetchPrepayId($order, $user_ip)
     {
-        $prepay_id = $order->pay_id;
-        if (!$prepay_id) {
-            $prepay_id = self::_refreshPrepayId($order, $user_ip);
-        } else {
-            $expireTime = new \Datetime($order->expire_time);
-            $diff = $expireTime->getTimestamp() - time();
-            if ($diff < 900) {
-                $prepay_id = self::_refreshPrepayId($order, $user_ip);
-            }
-        }
+        $prepay_id = self::_refreshPrepayId($order, $user_ip);
+
+        /// $prepay_id = $order->pay_id;
+        /// if (!$prepay_id) {
+        ///     $prepay_id = self::_refreshPrepayId($order, $user_ip);
+        /// } else {
+        ///     $expireTime = new \Datetime($order->expire_time);
+        ///     $diff = $expireTime->getTimestamp() - time();
+        ///     if ($diff < 900) {
+        ///         $prepay_id = self::_refreshPrepayId($order, $user_ip);
+        ///     }
+        /// }
       
         return $prepay_id;
     }
@@ -211,22 +212,6 @@ class CustomerOrderController extends ExternalController
         return $order->pay_id;
     }
 
-    private function _fetchLastOrder()
-    {
-        $session = Yii::$app->session;
-        $session->open();
-        if ($session->has('customerOrderID')) {
-            $orderID = $session['customerOrderID'];
-            $order = CustomerOrder::findOne($orderID);
-            if ($order) {
-                return $order;
-            }
-            // Expired session with invalid groupOrderID
-            $session->remove('customerOrderID');
-        }
-        return new CustomerOrder();
-    }
-    
     /**
      * Finds the GroupOrderSearch model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.

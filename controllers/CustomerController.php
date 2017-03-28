@@ -38,6 +38,10 @@ class CustomerController extends ExternalController
     {
         $request = Yii::$app->request;
         $user = $this->login();
+        if ($user->registered()) {
+            return $this->redirect($redirectUrl);
+        }
+        
         if (empty($user->nick_name)) {
             // The first visit for this customer
             $this->fetchUserInfo($user, $request->get('code'), $request->get('state'));

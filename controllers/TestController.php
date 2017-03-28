@@ -9,10 +9,11 @@ use yii\web\Request;
 use yii\web\BadRequestHttpException;
 use yii\filters\VerbFilter;
 use yii\helpers\Url;
+use yii\helpers\VarDumper;
 use app\models\AccessToken;
-use app\models\Order;
 use app\models\Customer;
-use app\models\OrderCustomer;
+use app\models\GroupOrder;
+use app\models\CustomerOrder;
 use app\models\CustomerAddress;
 use app\components\CommonUtility;
 use app\components\InternalException;
@@ -63,19 +64,16 @@ class TestController extends ExternalController
             'class' => 'yii\web\JsonResponseFormatter',
             'prettyPrint' => true,
         ];
-        return Yii::getAlias('@yii/gii');
+        return ['hehe' => $xml->asXML()];
     }
 
     public function actionTest1()
     {
-        $user = $this->login(true);
         $response = Yii::$app->response;
-        $response->format = \yii\web\Response::FORMAT_JSON;
-        $response->formatters[yii\web\Response::FORMAT_JSON] = [
-            'class' => 'yii\web\JsonResponseFormatter',
-            'prettyPrint' => true,
-        ];
-        return ['ret' => ''];
+        $order = GroupOrder::findOne(68);
+        $arr = ['a'=>1, 'b'=>['c'=>'d']];
+        $xml = CommonUtility::array2xml($arr);
+        return VarDumper::export($xml->asXML());
     }
 
     public function actionCreate()

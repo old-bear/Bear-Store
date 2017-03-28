@@ -60,7 +60,7 @@ $this->registerJs($sendCaptcha);
             <label class="control-label">手机号</label>
         </div>
         <div class="col-xs-9">
-            <?= $form->field($model, 'phone')->label(false) ?>
+            <?= $form->field($model, 'phone')->input('tel')->label(false) ?>
         </div>
     </div>
 
@@ -70,7 +70,7 @@ $this->registerJs($sendCaptcha);
         </div>
         <div class="col-xs-9">
             <?php
-            $captcha = $form->field($model, 'inputCaptcha');
+            $captcha = $form->field($model, 'inputCaptcha')->input('number');
             $captcha->template = $captchaTemplate;
             echo $captcha
             ?>
@@ -82,7 +82,7 @@ $this->registerJs($sendCaptcha);
             <label class="control-label">邮箱</label>
         </div>
         <div class="col-xs-9">
-            <?= $form->field($model, 'email')->label(false) ?>
+            <?= $form->field($model, 'email')->input('email')->label(false) ?>
         </div>
     </div>
 

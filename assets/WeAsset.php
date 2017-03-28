@@ -17,9 +17,9 @@ class WeAsset extends AssetBundle
 {
     public $sourcePath = '@bower/weui/dist/style';
     public $css = [
-        'weui.css',
+        '//res.wx.qq.com/open/libs/weui/1.1.1/weui.min.css',
     ];
     public $js = [
-        'http://res.wx.qq.com/open/js/jweixin-1.0.0.js',
+        'http://res.wx.qq.com/open/js/jweixin-1.1.0.js',
     ];
 }

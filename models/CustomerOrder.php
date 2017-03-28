@@ -33,10 +33,8 @@ class CustomerOrder extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['item_id', 'group_order_id',
-              'customer_id', 'amount'], 'required'],
-            [['item_id', 'group_order_id',
-              'customer_id', 'amount'], 'integer', 'min' => 1],
+            [['item_id', 'group_order_id', 'customer_id', 'amount'], 'required'],
+            [['item_id', 'group_order_id', 'customer_id', 'amount'], 'integer', 'min' => 1],
             [['status'], 'in', 'range' => ['creating', 'created',
                                            'paid', 'delivered', 'refunded']],
         ];

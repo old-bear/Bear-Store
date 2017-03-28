@@ -37,9 +37,7 @@ class JsapiTicket extends \yii\db\ActiveRecord
 
     public static function getJsapiTicket()
     {
-      
         $ticket = JsapiTicket::find()->orderBy('id DESC')->limit(1)->one();
-      
         if (!$ticket) {
             $ticket = self::_refreshJsapiTicket(1);
         } else {
@@ -49,7 +47,6 @@ class JsapiTicket extends \yii\db\ActiveRecord
                 $ticket = self::_refreshJsapiTicket($ticket->id + 1);
             }
         }
-      
         return $ticket->jsapi_ticket;
     }
 

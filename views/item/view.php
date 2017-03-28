@@ -8,6 +8,17 @@ use yii\helpers\Html;
 
 $formatter = \Yii::$app->formatter;
 
+$infoCss = <<<EOF
+#item-info {
+    line-height: 1.8;
+}
+
+#item-info .item-label {
+    padding-top: 3px;
+}
+EOF;
+$this->registerCss($infoCss);
+
 ?>
 
 <div class="container store-viewport">
@@ -58,8 +69,10 @@ $formatter = \Yii::$app->formatter;
         'offset' => 3,
     ]) ?>
 
-    <?= $this->render('_navbar', [
+    <?= $this->render('/group-order/_navbar', [
         'model' => $model,
+        'order' => null,
+        'user' => null,
     ]) ?>
 
 </div>

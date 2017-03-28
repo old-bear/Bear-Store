@@ -111,6 +111,11 @@ class Customer extends \yii\db\ActiveRecord
             ->orderBy('id DESC');
     }
 
+    public function registered()
+    {
+        return $this->phone !== null;
+    }
+    
     public function addressOptionArray()
     {
         $ret = [];

@@ -17,11 +17,11 @@ class DatepickerAsset extends AssetBundle
 {
     public $sourcePath = '@bower/bootstrap-datepicker/dist';
     public $css = [
-        'css/bootstrap-datepicker3.min.css',
+        '//cdn.bootcss.com/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker3.min.css',
     ];
     public $js = [
-        'js/bootstrap-datepicker.min.js',
-        'locales/bootstrap-datepicker.zh-CN.min.js',
+        '//cdn.bootcss.com/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js',
+        '//cdn.bootcss.com/bootstrap-datepicker/1.6.4/locales/bootstrap-datepicker.zh-CN.min.js',
     ];
     public $depends = [
         'yii\web\YiiAsset',

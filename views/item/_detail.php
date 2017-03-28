@@ -8,6 +8,20 @@ use yii\helpers\Html;
 
 $col1 = "col-xs-" . $offset;
 $col2 = "col-xs-" . (12 - $offset);
+
+$detailCss = <<<EOF
+#item-detail p {
+    font-size: 13px;
+    font-family: simhei;
+}
+
+#item-detail .item-label {
+    font-size: 12px;
+    color: grey;
+}
+EOF;
+$this->registerCss($detailCss);
+
 ?>
 
 <div id="item-detail">

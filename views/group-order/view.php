@@ -7,43 +7,60 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\View;
+use app\components\WechatJsProxy;
 
-use yii\widgets\ListView;
-
+$url = Url::current([], true);
 $formatter = \Yii::$app->formatter;
 
-$count = 0;
-$maximun_count = 3;
+$wejs = new WechatJsProxy(['appID' => Yii::$app->utils->appID,
+                           'url' => $url, 'view' => $this]);
+$wejs->setShareInfo($model->name . ' - 快来友团拼团吧', $url,
+                    Url::to($model->images[0]->photo_path, true), $model->description);
+$wejs->scanQRCode($order->id, '#scan-qrcode');
 
-$appId = $signPackage['appId'];
-$timestamp = $signPackage['timestamp'];
-$nonceStr = $signPackage['nonceStr'];
-$signature = $signPackage['signature'];
-
-$shareTitle = $model->name;
-$shareDesc = $model->description;
-$shareLink = Url::current([], true);
-$shareImgUrl = Url::base(true) . $model->images[0]->photo_path;
-
-$script = <<<EOF
-var shareData = {
-    title: '$shareTitle',
-    link: '$shareLink',
-    imgUrl: '$shareImgUrl',
-    desc: '$shareDesc',
-    success: function() {},
-    cancel: function() {},
+$orderCss = <<<EOF
+#item-order {
+    line-height: 2;
 }
-var wechat = new WeChatInterface();
-wechat.configure('$appId', $timestamp, '$nonceStr', '$signature', shareData);
 
-$('#scan-qrcode').click(function() {
-    wechat.scanQRCode();
-})
+#item-order .item-label {
+    padding-top: 3px;
+}
 
+#item-amount .item-label {
+    padding-top: 12px;
+}
+
+#item-amount .enough {
+    color: green;
+    padding-top: 10px;
+}
+
+#item-amount .lack {
+    color: #f20c00;
+    padding-top: 10px;
+}
 EOF;
+$this->registerCss($orderCss);
 
-$this->registerJs($script, View::POS_READY, 'amount-handler');
+$amountJs = <<<EOF
+$("#amount").TouchSpin({
+    initval: 1,
+    min: 1,
+    max: 100,
+    buttondown_class: 'btn btn-default btn-sm',
+    buttonup_class: 'btn btn-default btn-sm',
+});
+if ($("#amount").attr("quantity") === 0) {
+    $("#amount").prop('disabled', true);
+}
+EOF;
+$this->registerJs($amountJs);
+
+$member = ($order && $order->status == 'delivered'
+           && $order->leader_id == $user->id ? '_member_leader_view.php' : '_member.php');
+
+$joinOrderUrl = "/customer-order/create?orderID={$order->id}";
 
 ?>
 
@@ -64,8 +81,12 @@ $this->registerJs($script, View::POS_READY, 'amount-handler');
         <div id="item-amount" class="row">
             <div class="col-xs-2 item-label">数量</div>
             <div class="col-xs-5">
-                <?= Html::textInput('amount', '1', ['id' => 'amount',
-                                                    'quantity' => $model->amount]) ?>
+                <?= Html::beginForm("/customer-order/create?groupOrderID={$order->id}",
+                                    'post', ['id' => 'join-form']) ?>
+                <?= Html::input('number', 'amount', '1',
+                                ['id' => 'amount',
+                                 'class' => 'input-sm', 'quantity' => $model->amount]) ?>
+                <?=Html::endForm() ?>
             </div>
             <?php
             if ($model->amount > 100) {
@@ -88,61 +109,12 @@ $this->registerJs($script, View::POS_READY, 'amount-handler');
     </div>
 
     <div class="row separator"></div>
-    
-    <div id="group-detail">
-        <?php if ($order->status === 'delivered' or $order->status === 'completed'): ?>
-        <div class="row delivered-row">
-        <?php else: ?>
-        <div class="row">
-        <?php endif; ?>
-            <div class="col-xs-2 item-label">成员</div>
-            <div class="col-xs-3">
-                <?= Html::img($order->leader->head_img_path, ['id' => "head-img"]) ?>
-            </div>
-            <div class="col-xs-4">
-                <div class="row"><?= Html::encode($order->leader->nick_name) ?></div>
-                <hr class="row"></hr>
-                <div class="row"><?= Html::encode($order->leader->phone) ?></div>
-            </div>
-            <div class="col-xs-3">
-                <?php if ($order->status === 'delivered' or $order->status === 'completed'): ?>
-                <span class="glyphicon glyphicon-ok delivered-icon" aria-hidden="true"> </span>
-                <?php else: ?>
-                <img id="leader-img" src="/images/leader.png" />
-                <?php endif; ?>
-            </div>
-        </div>
-  
-        <?php foreach ($order->members as $member): ?>
-            <?php if ($member->id != $order->leader->id): ?>
-                <?php if ($member->customerOrdersAreDelivered($order->id)): ?>
-                <div class="row delivered-row <?php if ($count >= $maximun_count): echo "hidden-row"; endif; ?>">
-                <?php else: ?>
-                <div class="row <?php if ($count >= $maximun_count): echo "hidden-row"; endif; ?>">
-                <?php endif; ?>
-                    <div class="col-xs-2 item-label"></div>
-                    <div class="col-xs-3">
-                        <?= Html::img($member->head_img_path, ['id' => "head-img"]) ?>
-                    </div>
-                    <div class="col-xs-4">
-                        <div class="row"><?= Html::encode($member->nick_name) ?></div>
-                        <hr class="row"></hr>
-                        <div class="row"><?= Html::encode($member->phone) ?></div>
-                    </div>
-                    <div class="col-xs-3">
-                        <?php if ($member->customerOrdersAreDelivered($order->id)): ?>
-                        <span class="glyphicon glyphicon-ok delivered-icon" aria-hidden="true"> </span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php $count++; endif; ?>
-        <?php endforeach; ?>
-  
-        <?php if ($count >= $maximun_count): ?>
-            <button id="display-all"> 展开全部 </button>
-        <?php endif; ?>
-    </div>
 
+    <?= $this->render($member, [
+        'order' => $order,
+        'user' => $user,
+    ]) ?>
+    
     <div class="row separator"></div>
 
     <?= $this->render('/item/_detail', [

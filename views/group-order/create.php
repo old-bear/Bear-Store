@@ -23,6 +23,33 @@ $addressDropdown = Html::dropDownList("delivery-address",
                                       $user->addressOptionArray(),
                                       ['class' => "form-control"]);
 
+$orderCss = <<<EOF
+#order-form .order-label {
+    padding-top: 13px;
+    padding-right: 0px;
+    color: grey;
+}
+
+#order-form .row {
+    margin-bottom: 10px;
+}
+
+#order-form #total {
+    font-size: 10px;
+    padding-top: 20px;
+    padding-left: 0px;
+}
+
+#order-form .input-group-addon:first-child {
+    padding: 8px;
+}
+
+#order-form .max-amount-down {
+    border-radius: 0px;
+}
+EOF;
+$this->registerCss($orderCss);
+
 $addressTemplate = <<<EOF
 <div class="input-group">
     $addressDropdown
@@ -46,7 +73,52 @@ $dateTemplate = <<<EOF
 {error}
 EOF;
 
-$submitUrl = str_replace('create', 'submit', Yii::$app->request->url);
+$dataJs = <<<EOF
+var start = new Date($('#arrival-date').attr('date-start'));
+var end = new Date($('#arrival-date').attr('date-end'));
+var now = new Date();
+start = start < now ? now : start;
+$('#arrival-date').datepicker({
+    autoclose: true,
+    language: 'zh-CN',
+    orientation: 'top auto',
+    startDate: start,
+    endDate: end,
+    beforeShowDay: function(date) {
+        if (date > start || date.getTime() == start.getTime()
+            || date < end || date.getTime() == end.getTime()) {
+            return 'text-primary';
+        }
+    },
+});
+var last = $('#arrival-date').attr('last-date');
+if (last) {
+    $('#arrival-date').datepicker('setDate', new Date(last));
+}
+EOF;
+$this->registerJs($dataJs);
+
+$amountJs = <<<EOF
+$("#amount").TouchSpin({
+    initval: 1,
+    min: 1,
+    max: 100,
+});
+if ($("#amount").attr("quantity") === 0) {
+    $("#amount").prop('disabled', true);
+}
+
+$("#max-amount").TouchSpin({
+    initval: $('#max-amount').attr('data-min'),
+    min: $('#max-amount').attr('data-min'),
+    buttondown_class: 'btn btn-default max-amount-down',
+});
+$('#max-amount-flip').click(function() {
+    $('#max-amount').prop('disabled', !$('#max-amount-flip').prop('checked'));
+});
+EOF;
+$this->registerJs($amountJs);
+
 $formatter = \Yii::$app->formatter;
 ?>
 
@@ -57,34 +129,37 @@ $formatter = \Yii::$app->formatter;
     
     <div class="row bg-info separator"></div>
 
-    <?php $form = ActiveForm::begin(['id' => "order-form", "action" => $submitUrl]); ?>
+    <?= $this->render('/item/_title.php', [
+        'model' => $item,
+    ]) ?>
+
+    <div class="row separator"></div>
+
+    <?php $form = ActiveForm::begin(['id' => "order-form"]); ?>
     <div class="row">
         <div class="order-label col-xs-3">订购数量</div>
-        <div class="col-xs-7">
-            <?= Html::textInput('amount', $amount, ['id' => 'amount']) ?>
+        <div class="col-xs-6">
+            <?= Html::input('number', 'amount', $amount, ['id' => 'amount']) ?>
         </div>
     </div>
     <div class="row">
         <div class="order-label col-xs-3">封顶数量</div>
-        <div class="col-xs-7">
+        <div class="col-xs-6">
             <div class="input-group">
-                <?= Html::textInput('max-amount', $maxAmount,
-                                    ['id' => 'max-amount',
-                                     'disabled' => !$setMaxAmount,
-                                     'data-min' => $item->threshold,
-                                     'data-max' => $item->amount]) ?>
                 <span class="input-group-addon">
                     <?= Html::checkbox("", $setMaxAmount,
                                        ['id' => 'max-amount-flip',]) ?>
                 </span>
+                <?= Html::textInput('max-amount', $maxAmount,
+                                    ['id' => 'max-amount',
+                                     'disabled' => !$setMaxAmount,
+                                     'data-min' => $item->threshold]) ?>
             </div>
         </div>
-        <div id='total' class="order-label col-xs-2">
+        <div id='total' class="order-label col-xs-3">
             最低要求<?= Html::encode($item->threshold) ?>
         </div>
     </div>
-
-    <div class="row bg-info separator"></div>
     
     <div class="row">
         <div class="order-label col-xs-3">送货地址</div>

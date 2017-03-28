@@ -127,44 +127,30 @@ class GroupOrder extends \yii\db\ActiveRecord
         return $this->deliveryAddress->addressString();
     }
   
-    public function hasMember(string $qrcode_url)
-    {
-        return $this
-            ->hasMany(Customer::className(), ['id' => 'customer_id'])
-            ->viaTable('customer_order', ['group_order_id' => 'id'])
-            ->where(['qrcode_url' => $qrcode_url])
-            ->distinct()->count();
+    public function getCustomerOrder(int $uid) {
+        return $this->getCustomerOrders()
+            ->where(['customer_id' => $uid])->all();
     }
-  
-    public function fetchCustomer(string $qrcode_url)
-    {
-         return $this
-            ->hasMany(Customer::className(), ['id' => 'customer_id'])
-            ->viaTable('customer_order', ['group_order_id' => 'id'])
-            ->where(['qrcode_url' => $qrcode_url])
-            ->distinct()->limit(1)->one();
-    }
-  
-    public function fetchCustomerOrderID(string $user_id)
-    {
-        $customer_orders = $this
-            ->hasMany(CustomerOrder::className(), ['group_order_id' => 'id'])
-            ->where(['customer_id' => (int)$user_id])
-            ->distinct()->all();
-        
-        $transaction_id_list = array();
-        foreach ($customer_orders as $order) {
-            array_push($transaction_id_list, $order->pay_id);
+
+    public function customerOrderCompleted(int $uid) {
+        $orders = $this->getCustomerOrder(uid);
+        if (!$orders) {
+            return false;
         }
-        return $transaction_id_list;
+        foreach ($orders as $order) {
+            if ($order->status != 'delivered') {
+                return false;
+            }
+        }
+        return true;
     }
   
     public function isCompleted()
     {
-        $customerOrders = $this->customerOrders;
-        foreach ($customerOrders as $order) {
-            if ($order->status !== 'delivered')
+        foreach ($this->customerOrders as $order) {
+            if ($order->status !== 'delivered') {
                 return false;
+            }
         }
         return true;
     }

@@ -4,8 +4,9 @@ namespace app\controllers;
 
 use Yii;
 use yii\helpers\Url;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\ForbiddenHttpException;
+use yii\filters\VerbFilter;
 
 use app\models\Item;
 use app\models\Customer;
@@ -24,68 +25,70 @@ class GroupOrderController extends ExternalController
     /**
      * @inheritdoc
      */
-    /// public function behaviors()
-    /// {
-    ///     return [
-    ///     ];
-    /// }
+    public function behaviors()
+    {
+        return [
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'create' => ['get', 'post'],
+                    'view' => ['get'],
+                    'dispatch' => ['post'],
+                ],
+            ],
+        ];
+    }
 
     public function actionCreate($itemID)
     {
         $request = Yii::$app->request;
-      
-        $item = Item::findOne($itemID);
+        $session = Yii::$app->session;
+        $session->open();
+
         $user = $this->login();
-        $order = $this->_fetchLastOrder();
-      
-        if (!$user->phone) {
-            // MUST register (have phone) to create group order
+        if (!$user->registered()) {
             return $this->redirect(['customer/create', 
                                     'redirectUrl' => $request->absoluteUrl]);
         }
 
-        return $this->render('/group-order/create', [
-            'item' => $item,
-            'user' => $user,
-            'order' => $order,
-        ]);
-    }
-
-    public function actionSubmit($itemID)
-    {
-        $request = Yii::$app->request;
-        $session = Yii::$app->session;
-
-        $item = Item::findOne($itemID);
-        $user = $this->login();
-        $order = $this->_fetchLastOrder();
-        
-        $order->item_id = $itemID;
-        $order->leader_id = $user->id;
-        $order->leader_amount = $request->post('amount');
-        $order->max_amount = $request->post('max-amount');
-        $order->setArrivalDate($request->post('arrival-date'),
-                               $item->delivery_duration);
-        $order->setDeliveryAddress($request->post('delivery-address', ''));
-        $order->status = 'creating';
-        $saved = $order->save();
-
-        if ($request->post('submit-order')) {
-            $order->scenario = 'submit';
-            if ($saved) {
-                return $this->redirect(['customer-order/create',
-                                       'orderID' => $order->id]);
+        $order = new GroupOrder();
+        if ($session->has('groupOrderID')) {
+            $orderID = $session['groupOrderID'];
+            $order = GroupOrder::findOne(['id' => $orderID, 'status' => 'creating']);
+            if (!$order) {
+                // Expired session with invalid groupOrderID
+                $session->remove('groupOrderID');
+                $order = new GroupOrder();
             }
-            
-        } else if ($request->post('add-address')) {
-            $session->open();
-            $session['groupOrderID'] = $order->id;
-            $session->close();
-            $redirectUrl = Url::to(['group-order/create', 'itemID' => $itemID]);
-            return $this->redirect(['customer-address/create',
-                                    'redirectUrl' => $redirectUrl]);
         }
         
+        $item = Item::findOne($itemID);
+
+        if ($request->isPost) {
+            $order->item_id = $itemID;
+            $order->leader_id = $user->id;
+            $order->leader_amount = $request->post('amount');
+            $order->max_amount = $request->post('max-amount');
+            $order->setArrivalDate($request->post('arrival-date'),
+                                   $item->delivery_duration);
+            $order->setDeliveryAddress($request->post('delivery-address', ''));
+            $order->status = 'creating';
+
+            if ($request->post('submit-order')) {
+                $order->scenario = 'submit';
+                if ($order->save()) {
+                    return $this->redirect(['customer-order/create',
+                                            'orderID' => $order->id]);
+                }
+            } else if ($request->post('add-address')) {
+                $order->save();
+                $session['groupOrderID'] = $order->id;
+                $addAddressUrl = Url::to(['customer-address/create',
+                                          'redirectUrl' => $request->absoluteUrl]);
+                return $this->redirect($addAddressUrl);
+            }
+        }
+
         return $this->render('/group-order/create', [
             'item' => $item,
             'user' => $user,
@@ -156,22 +159,41 @@ class GroupOrderController extends ExternalController
         return ['errMsg' => $msg];
     }
 
-
-    private function _fetchLastOrder()
+    public function actionDispatch($id)
     {
-        $session = Yii::$app->session;
-        $session->open();
-        if ($session->has('groupOrderID')) {
-            $orderID = $session['groupOrderID'];
-            $order = GroupOrder::findOne($orderID);
-            if ($order) {
-                return $order;
-            }
-            // Expired session with invalid groupOrderID
-            $session->remove('groupOrderID');
+        $request = Yii::$app->request;
+        $response = Yii::$app->response;
+        $response->format = \yii\web\Response::FORMAT_JSON;
+
+        $groupOrder = $this->findModel($id);
+        $user = $this->login();
+        if ($groupOrder->leader_id != $user->id) {
+            throw new ForbiddenHttpException('只有团长才能扫码!');
         }
-        return new GroupOrder();
+
+        $qrcodeUrl = $request->post('qrcode-url');
+        $customer = Customer::findOne(['qrcode_url' => $qrcodeUrl]);
+        if (!$customer) {
+            throw new NotFoundHttpException('没有找到该用户');
+        }
+
+        $orders = $groupOrder->getCustomerOrder($customer->id);
+        if (!$orders) {
+            throw new NotFoundHttpException('该用户不在此订单');
+        }
+
+        foreach ($orders as $order) {
+            $order->status = 'delivered';
+            $order->save();
+        }
+            
+        if ($groupOrder->isCompleted()) {
+            $groupOrder->status = 'completed';
+            $groupOrder->save();
+        }
+        return ['errMsg' => 'Success'];
     }
+
     
     /**
      * Finds the GroupOrderSearch model based on its primary key value.
@@ -182,7 +204,8 @@ class GroupOrderController extends ExternalController
      */
     protected function findModel($id)
     {
-        if (($model = GroupOrder::findOne($id)) !== null) {
+        $model = GroupOrder::findOne($id);
+        if ($model && $model->status != 'creating') {
             return $model;
         } else {
             throw new NotFoundHttpException('抱歉，该订单不存在');
