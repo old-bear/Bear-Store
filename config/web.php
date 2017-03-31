@@ -43,6 +43,7 @@ $config = [
                     'maxFileSize' => 102400,
                     'levels' => ['error', 'warning'],
                     'except' => [
+                        'yii\debug\Module::checkAccess',
                         'yii\i18n\PhpMessageSource::loadFallbackMessages',
                     ],
                     'logFile' => '@runtime/logs/store.log.wf',
@@ -107,6 +108,13 @@ $config = [
             'secretAccessKey' => 'acc72d8e83fb440fbf763e02d57854ca',
             'invokeID' => "ByLOpIBI-NDLb-3Z3o",
         ],
+
+        'wepay' => [
+            'class' => 'app\components\WePayProxy',
+            'appID' => 'wx19722aca1cab5994',
+            'merchantID' => '1417391302',
+            'paymentKey' => '4263f100ffdf080891147980522af30e',
+        ],
     ],
     'timeZone' => 'Asia/Shanghai',
     'params' => $params,
@@ -117,7 +125,7 @@ if (YII_ENV_DEV) {
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
-        'allowedIPs' => ['*'],
+        //'allowedIPs' => ['*'],
     ];
 
     $config['bootstrap'][] = 'gii';

@@ -90,17 +90,19 @@ class Customer extends \yii\db\ActiveRecord
             ->orderBy('id DESC');
     }
 
+    public function getCustomerOrders()
+    {
+        return $this->hasMany(CustomerOrder::className(), ['customer_id' => 'id']);
+    }
+    
     public function getAddresses()
     {
         return $this->hasMany(CustomerAddress::className(), ['customer_id' => 'id']);
     }
   
-    public function getFavoriteItems()
+    public function getFavorites()
     {
-        return $this
-            ->hasMany(Item::className(), ['id' => 'item_id'])
-            ->viaTable('favorite_item', ['customer_id' => 'id'])
-            ->orderBy('id DESC');
+        return $this->hasMany(Favorite::className(), ['customer_id' => 'id']);
     }
   
     public function getFavoriteOrders()
@@ -174,7 +176,6 @@ class Customer extends \yii\db\ActiveRecord
     public function getQrTicket()
     {
         $ticket = $this->qrcode_ticket;
-      
         if (!$ticket) {
             $ticket = self::_refreshQrTicket();
         } else {
@@ -185,7 +186,6 @@ class Customer extends \yii\db\ActiveRecord
                 $ticket = self::_refreshQrTicket();
             }
         }
-      
         return $ticket;
     }
   

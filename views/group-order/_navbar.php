@@ -7,13 +7,77 @@
 
 use yii\helpers\Url;
 use yii\helpers\Html;
-
 use yii\web\View;
+use app\models\Favorite;
+
+$favType = Yii::$app->controller->id;
+$favID = Yii::$app->request->get('id');
+$favorite = Favorite::findOne(['resource_type' => $favType,
+                               'resource_id' => $favID]);
+$favoriteID = ($favorite ? $favorite->id : '');
 
 $navbtnJs = <<<EOF
 $('#join-order').click(function() {
     $('#join-form').submit();
 });
+
+$('#share').click(function() {
+    $('#share-dialog').show();
+});
+$('#share-dialog-ok').click(function() {
+    $('#share-dialog').hide();
+});
+
+function setFavoriteCss() {
+    if ($('#favorite').attr('favorite-id')) {
+        $('#favorite span').text('已收藏');
+        $('#favorite').css(
+            'background-image', 'url("/images/glyphicons/glyphicons-13-heart.png")');
+    } else {
+        $('#favorite span').text('收藏');
+        $('#favorite').css(
+            'background-image', 'url("/images/glyphicons/glyphicons-20-heart-empty.png")');
+    }
+}
+
+function showToast() {
+    var toast = $('#toast');
+    if (toast.css('display') != 'none') {
+        return;
+    }
+    toast.fadeIn(100);
+    setTimeout(function() {
+        toast.fadeOut(100);
+    }, 2000);
+}
+
+$('#favorite').click(function() {
+    if ($(this).attr('favorite-id')) {
+        $.ajax({
+            url: '/favorite/delete?id=' + $(this).attr('favorite-id'),
+            method: 'DELETE',
+            dataType: 'json',
+            success: function(res) {
+                $('#favorite').attr('favorite-id', '');
+                $('.weui-toast__content').text('已取消');
+                setFavoriteCss();
+                showToast();
+            }
+        });
+    } else {
+        $.post('/favorite/create', {'resource_type': '$favType',
+                                    'resource_id': $favID},
+               function(res) {
+                   $('#favorite').attr('favorite-id', res.id);
+                   $('.weui-toast__content').text('已收藏');
+                   setFavoriteCss();
+                   showToast();
+               }
+        );
+    }
+});
+
+setFavoriteCss();
 EOF;
 $this->registerJs($navbtnJs);
 
@@ -61,10 +125,6 @@ $navbarCss = <<<EOF
     background-image: url("/images/glyphicons/glyphicons-309-share-alt.png");
 }
 
-#favorite {
-    background-image: url("/images/glyphicons/glyphicons-20-heart-empty.png");
-}
-
 #profile {
     background-image: url("/images/glyphicons/glyphicons-4-user.png");
 }
@@ -102,8 +162,9 @@ $orderCreateURL = Url::to(['group-order/create', 'itemID' => $model->id], true);
     <a id="share" class="col-xs-2" href="javascript:;">
         <span class="text-center">分享</span>
     </a>
-    <a id="favorite" class="col-xs-2" href="javascript:;">
-        <span class="text-center">收藏</span>
+    <a id="favorite" favorite-id="<?= $favoriteID ?>"
+       class="col-xs-2" href="javascript:;">
+        <span class="text-center"></span>
     </a>
     <a id="profile" class="col-xs-2" href="/profile/index">
         <span class="text-center">我的友团</span>
@@ -139,4 +200,20 @@ $orderCreateURL = Url::to(['group-order/create', 'itemID' => $model->id], true);
     <?php endif; ?>
 </div>
 
-<?= $this->render('/item/_popup') ?>
+<div style="display: none;" id="share-dialog">
+    <div class="weui-mask"></div>
+    <div class="weui-dialog">
+        <div class="weui-dialog__bd">请点击右上角微信菜单，选择分享，邀请小伙伴一起拼团吧 ^_^</div>
+        <div class="weui-dialog__ft">
+            <a href="javascript:;" class="weui-dialog__btn weui-dialog__btn_primary" id="share-dialog-ok">确定</a>
+        </div>
+    </div>
+</div>
+
+<div style="display: none;" id="toast">
+    <div class="weui-mask_transparent"></div>
+    <div class="weui-toast">
+        <i class="weui-icon-success-no-circle weui-icon_toast"></i>
+        <p class="weui-toast__content"></p>
+    </div>
+</div>

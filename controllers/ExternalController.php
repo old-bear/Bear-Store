@@ -19,10 +19,20 @@ class ExternalController extends Controller
                   . ("[PARAMS=" . VarDumper::export($request->bodyParams) . "] "), 'service');
         parent::init();
     }
-    
-    public function login()
+
+    public function login(bool $needRegister = false)
     {
-        return Customer::findOne(42);
+        $user = $this->loginImpl();
+        if ($needRegister && !$user->registered()) {
+            return $this->redirect(['customer/create',
+                                    'redirectUrl' => Yii::$app->request->absoluteUrl]);
+        }
+        return $user;
+    }
+    
+    public function loginImpl()
+    {
+        //return Customer::findOne(42);
         
         $request = Yii::$app->request;
         $session = Yii::$app->session;

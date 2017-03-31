@@ -46,8 +46,13 @@ class WePayProxy extends Object
                  . "signType=MD5&timeStamp=$timestamp&key={$this->paymentKey}";
         return strtoupper(md5($signStr));
     }
+
+    public function verifySign(array $body, string $sign)
+    {
+        return $this->paymentSign($body) == $sign;
+    }
     
-    private function paymentSign($body)
+    private function paymentSign(array $body)
     {
         $signStr = "";
         ksort($body);

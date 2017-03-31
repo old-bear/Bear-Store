@@ -12,6 +12,7 @@ use yii\helpers\Url;
 use yii\helpers\VarDumper;
 use app\models\AccessToken;
 use app\models\Customer;
+use app\models\Item;
 use app\models\GroupOrder;
 use app\models\CustomerOrder;
 use app\models\CustomerAddress;
@@ -64,16 +65,38 @@ class TestController extends ExternalController
             'class' => 'yii\web\JsonResponseFormatter',
             'prettyPrint' => true,
         ];
-        return ['hehe' => $xml->asXML()];
+        $body = [    'appid' => 'wx19722aca1cab5994',
+                     'bank_type' => 'CMB_CREDIT',
+                     'cash_fee' => '100',
+                     'fee_type' => 'CNY',
+                     'is_subscribe' => 'Y',
+                     'mch_id' => '1417391302',
+                     'nonce_str' => 'g4bTTTqxJj0KEOdk',
+                     'openid' => 'ohdHXv7Q9Qir-VZx9RaGcH13kp-g',
+                     'out_trade_no' => '87',
+                     'result_code' => 'SUCCESS',
+                     'return_code' => 'SUCCESS',
+                     'time_end' => '20170328210835',
+                     'total_fee' => '100',
+                     'trade_type' => 'JSAPI',
+                     'transaction_id' => '4003532001201703284987221573',
+        ];
+
+        return ['sign1'=>Yii::$app->wepay->paymentSign($body),
+                'sign' => '9490B3FC58380313EC16393D24F420EA'];
     }
 
     public function actionTest1()
     {
         $response = Yii::$app->response;
+
         $order = GroupOrder::findOne(68);
+        $item = Item::findOne(1);
+
         $arr = ['a'=>1, 'b'=>['c'=>'d']];
         $xml = CommonUtility::array2xml($arr);
-        return VarDumper::export($xml->asXML());
+
+        return $item->deliveryAddress->id;
     }
 
     public function actionCreate()

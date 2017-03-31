@@ -60,7 +60,7 @@ $this->registerJs($amountJs);
 $member = ($order && $order->status == 'delivered'
            && $order->leader_id == $user->id ? '_member_leader_view.php' : '_member.php');
 
-$joinOrderUrl = "/customer-order/create?orderID={$order->id}";
+$joinOrderUrl = "/customer-order/create?groupOrderID={$order->id}";
 
 ?>
 

@@ -75,7 +75,7 @@ EOF;
         $this->view->registerJs($shareJs);
     }
 
-    public function scanQRCode($orderID, $btnID)
+    public function scanQRCode($orderID, $buttonID)
     {
         $scanJs = <<<EOF
 var data = {
@@ -84,19 +84,18 @@ var data = {
     success: function(res) {
         $.post('/group-order/dispatch?id=$orderID',
                {'qrcode-url': res.resultStr}, function(res) {
-            console.log(res);
             location.reload();
         });
     }
 };
-$('$btnID').click(function() {
+$('$buttonID').click(function() {
     wx.scanQRCode(data);
 });
 EOF;
         $this->view->registerJs($scanJs);
     }
 
-    public function pay($prepayID, $redirectUrl)
+    public function pay($prepayID, $redirectUrl, $buttonID)
     {
         $timestamp = time();
         $nonceStr = CommonUtility::generateNonce();
@@ -112,6 +111,9 @@ var paymentData = {
     success: function(res) { window.location.href = "$redirectUrl"; },
     cancel: function() {},
 };
+$('$buttonID').click(function() {
+    wx.chooseWXPay(paymentData);
+});
 EOF;
         $this->view->registerJs($payJs);
     }

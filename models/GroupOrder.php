@@ -93,6 +93,23 @@ class GroupOrder extends \yii\db\ActiveRecord
             $this->delivery_address_id = null;
         }
     }
+
+    public function getStatusString()
+    {
+        if ($this->status == 'created') {
+            return '拼团中';
+        } else if ($this->status == 'delivering') {
+            return '已成团';
+        } else if ($this->status == 'delivered') {
+            return '已到货';
+        } else if ($this->status == 'completed') {
+            return '已完成';
+        } else if ($this->status == 'cancelled') {
+            return '已取消';
+        } else {
+            return $this->status;
+        }
+    }
     
     public function getLeader()
     {

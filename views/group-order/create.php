@@ -8,7 +8,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
-$amount = $order->leader_amount ? $order->leader_amount : 1;
+$amount = $order->leader_amount ? $order->leader_amount : 10;
 $setMaxAmount = $order->max_amount !== null;
 $maxAmount = $setMaxAmount ? $order->max_amount : $item->threshold;
 
@@ -46,6 +46,11 @@ $orderCss = <<<EOF
 
 #order-form .max-amount-down {
     border-radius: 0px;
+}
+
+#check-box {
+    float: left;
+    width: 18%;
 }
 EOF;
 $this->registerCss($orderCss);
@@ -100,7 +105,6 @@ $this->registerJs($dataJs);
 
 $amountJs = <<<EOF
 $("#amount").TouchSpin({
-    initval: 1,
     min: 1,
     max: 100,
 });
@@ -109,8 +113,7 @@ if ($("#amount").attr("quantity") === 0) {
 }
 
 $("#max-amount").TouchSpin({
-    initval: $('#max-amount').attr('data-min'),
-    min: $('#max-amount').attr('data-min'),
+    min: $('#max-amount').attr('threshold'),
     buttondown_class: 'btn btn-default max-amount-down',
 });
 $('#max-amount-flip').click(function() {
@@ -145,16 +148,17 @@ $formatter = \Yii::$app->formatter;
     <div class="row">
         <div class="order-label col-xs-3">封顶数量</div>
         <div class="col-xs-6">
-            <div class="input-group">
+            <div id="check-box" class="input-group">
                 <span class="input-group-addon">
                     <?= Html::checkbox("", $setMaxAmount,
                                        ['id' => 'max-amount-flip',]) ?>
                 </span>
-                <?= Html::textInput('max-amount', $maxAmount,
-                                    ['id' => 'max-amount',
-                                     'disabled' => !$setMaxAmount,
-                                     'data-min' => $item->threshold]) ?>
+                <div class="hidden"></div>
             </div>
+            <?= Html::input('number', 'max-amount', $maxAmount,
+                            ['id' => 'max-amount',
+                             'disabled' => !$setMaxAmount,
+                             'threshold' => $item->threshold]) ?>
         </div>
         <div id='total' class="order-label col-xs-3">
             最低要求<?= Html::encode($item->threshold) ?>

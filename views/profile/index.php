@@ -12,24 +12,24 @@ $formatter = \Yii::$app->formatter;
 
 $addressManagementURL = Url::to(['profile/address-management'], true);
 $orderManagementURL = Url::to(['profile/order-management'], true);
-$favoriteItemURL = Url::to(['profile/favorite-item'], true);
+$favoriteItemURL = Url::to(['profile/favorite-management'], true);
 
-$qrcode_img_url = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket='
-    . $user->qrTicket;
+$qrcodeImgLink = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=' . $user->qrTicket;
 
 ?>
 
 <div class="container store-viewport" id="user-profile">
-    <?= $this->render('_detail', ['user' => $user]) ?>
+    <?= $this->render('_thumb', ['user' => $user]) ?>
   
     <?php
     Modal::begin([
-        'header' => '<h3>二维码名片</h3>',
-        'toggleButton' => ['label' => '二维码名片',
+        'header' => '<h3>我的二维码</h3>',
+        'toggleButton' => ['label' => ' 我的二维码',
+                           'class' => 'glyphicon glyphicon-qrcode',
                            'id' => 'qrcode-toggle-btn'],
     ]);
   
-    echo Html::img($qrcode_img_url);
+    echo Html::img($qrcodeImgLink);
   
     Modal::end();
     ?>
@@ -39,37 +39,37 @@ $qrcode_img_url = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket='
     <ul class="list-group">
         <li class="row list-group-item">
             <a href="<?= $orderManagementURL ?>">
-                <div class="col-xs-11 col-sm-11 col-md-11 col-lg-11">
-                    <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true">
+                <div class="col-xs-10">
+                    <span class="glyphicon glyphicon-shopping-cart">
                         订单管理
                     </span>
                 </div>
-                <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 text-right">
-                    <span class="glyphicon glyphicon-chevron-right text-grey" aria-hidden="true"></span>
+                <div class="col-xs-2 text-right">
+                    <span class="glyphicon glyphicon-chevron-right text-grey"></span>
                 </div>
             </a>
         </li>
         <li class="row list-group-item">
             <a href="<?= $favoriteItemURL ?>">
-                <div class="col-xs-11 col-sm-11 col-md-11 col-lg-11">
-                    <span class="glyphicon glyphicon-heart" aria-hidden="true">
+                <div class="col-xs-10">
+                    <span class="glyphicon glyphicon-heart">
                         收藏管理
                     </span>
                 </div>
-                <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 text-right">
-                    <span class="glyphicon glyphicon-chevron-right text-grey" aria-hidden="true"></span>
+                <div class="col-xs-2 text-right">
+                    <span class="glyphicon glyphicon-chevron-right text-grey"></span>
                 </div>
             </a>
         </li>
         <li class="row list-group-item">
             <a href="<?= $addressManagementURL ?>">
-                <div class="col-xs-11 col-sm-11 col-md-11 col-lg-11">
-                    <span class="glyphicon glyphicon-map-marker" aria-hidden="true">
+                <div class="col-xs-10">
+                    <span class="glyphicon glyphicon-map-marker">
                         地址管理
                     </span>
                 </div>
-                <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 text-right">
-                    <span class="glyphicon glyphicon-chevron-right text-grey" aria-hidden="true"></span>
+                <div class="col-xs-2 text-right">
+                    <span class="glyphicon glyphicon-chevron-right text-grey"></span>
                 </div>
             </a>
         </li>

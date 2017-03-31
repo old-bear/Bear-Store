@@ -45,11 +45,8 @@ class GroupOrderController extends ExternalController
         $session = Yii::$app->session;
         $session->open();
 
-        $user = $this->login();
-        if (!$user->registered()) {
-            return $this->redirect(['customer/create', 
-                                    'redirectUrl' => $request->absoluteUrl]);
-        }
+        $user = $this->login(true);
+        $item = Item::findOne($itemID);
 
         $order = new GroupOrder();
         if ($session->has('groupOrderID')) {
@@ -62,7 +59,6 @@ class GroupOrderController extends ExternalController
             }
         }
         
-        $item = Item::findOne($itemID);
 
         if ($request->isPost) {
             $order->item_id = $itemID;
@@ -72,13 +68,15 @@ class GroupOrderController extends ExternalController
             $order->setArrivalDate($request->post('arrival-date'),
                                    $item->delivery_duration);
             $order->setDeliveryAddress($request->post('delivery-address', ''));
-            $order->status = 'creating';
+            $order->status = 'created';
 
             if ($request->post('submit-order')) {
                 $order->scenario = 'submit';
                 if ($order->save()) {
-                    return $this->redirect(['customer-order/create',
-                                            'orderID' => $order->id]);
+                    // Tricky ways to `redirect' to a POST method,
+                    // which can use the _POST body passed in
+                    return Yii::$app->runAction('customer-order/create',
+                                                ['groupOrderID' => $order->id]);
                 }
             } else if ($request->post('add-address')) {
                 $order->save();

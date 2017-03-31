@@ -4,8 +4,11 @@ namespace app\controllers;
 
 use Yii;
 use yii\helpers\Url;
+use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\ConflictHttpException;
+use yii\web\ServerErrorHttpException;
+use yii\web\UnauthorizedHttpException;
 use yii\filters\VerbFilter;
 
 use app\models\Item;
@@ -33,7 +36,8 @@ class CustomerOrderController extends ExternalController
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'create' => ['post'],
+                    'create' => ['get', 'post'],   // get for the redirection
+                    'notify' => ['post'],
                 ],
             ],
         ];
@@ -42,12 +46,7 @@ class CustomerOrderController extends ExternalController
     public function actionCreate($groupOrderID)
     {
         $request = Yii::$app->request;
-        $user = $this->login();
-        if (!$user->registered()) {
-            return $this->redirect(['customer/create', 
-                                    'redirectUrl' => $request->absoluteUrl]);
-        }
-
+        $user = $this->login(true);
         $amount = $request->post('amount');
         if (!$amount) {
             throw new BadRequestHttpException('请指定数量');
@@ -78,35 +77,14 @@ class CustomerOrderController extends ExternalController
 
         $pay = Yii::$app->wepay->unifiedOrder($customerOrder,
                                               $request->getUserIP(), $user->open_id);
-        $customerOrder->pay_id = $pay['prepay_id'];
+        $customerOrder->prepay_id = $pay['prepay_id'];
         $expireTime = (new \DateTime())->add(new \DateInterval('PT7200S'));
         $customerOrder->expire_time = $expireTime->format('Y-m-d H:i:s');
         $customerOrder->status = 'created';
         $customerOrder->save();
             
-        return $this->render('pay', [
+        return $this->render('create', [
             'order' => $customerOrder,
-        ]);
-    }
-  
-    public function actionPay($id) 
-    {
-        $request = Yii::$app->request;
-        $user_ip = $request->getUserIP();
-        
-        $order = $this->findModel($id);
-      
-        $ak = AccessToken::getAccessToken();
-        $ticket = JsapiTicket::getJsapiTicket();
-        $signPackage = Yii::$app->utils->getSignPackage($ak, $ticket);
-
-        $prepay_id = self::_fetchPrepayId($order, $user_ip);
-        $paySignPackage = Yii::$app->utils->getWxPaySignPackage($prepay_id);
-        
-        return $this->render('pay', [
-            'signPackage' => $signPackage,
-            'paySignPackage' => $paySignPackage,
-            'order' => $order,
         ]);
     }
   
@@ -144,22 +122,27 @@ class CustomerOrderController extends ExternalController
         $request = Yii::$app->request;
         $response = Yii::$app->response;
         $response->format = \yii\web\Response::FORMAT_XML;
+        $response->formatters[yii\web\Response::FORMAT_XML] = [
+            'class' => 'yii\web\XmlResponseFormatter',
+            'rootTag' => 'xml',
+        ];
         
-        Yii::trace("[NOTIFY_URL]" . json_encode($request->bodyParams), 'service');
-      
-        $data = json_decode(json_encode($request->bodyParams), true);
-      
-        if (strcmp($data['result_code'], 'SUCCESS') == 0) {
-            $order = $this->findModel($data['out_trade_no']);
-            $order->pay_id = $data['transaction_id'];
-            $order->status = 'paid';
-            $order->save();
-            return Yii::$app->utils->wechatNotifyResponse('SUCCESS', 'OK');
-        } else {
-            return Yii::$app->utils->wechatNotifyResponse('FAIL', 'Wechat Payment Failed');
+        $body = $request->post();
+        $sign = $body['sign'];
+        unset($body['sign']);
+        if (!Yii::$app->wepay->verifySign($body, $sign)) {
+            throw new UnauthorizedHttpException('你是谁！');
+        }
+
+        if ($body['return_code'] != 'SUCCESS' || $body['result_code'] != 'SUCCESS') {
+            throw new ServerErrorHttpException('支付失败：' . $body['return_msg']);
         }
         
-        return Yii::$app->utils->wechatNotifyResponse('SUCCESS', 'OK');
+        $order = $this->findModel($body['out_trade_no']);
+        $order->transaction_id = $body['transaction_id'];
+        $order->status = 'paid';
+        $order->save();
+        return ['return_code' => 'SUCCESS', 'return_msg' => 'OK'];
     }
 
     /**
@@ -177,41 +160,6 @@ class CustomerOrderController extends ExternalController
         ]);
     }
   
-    private static function _fetchPrepayId($order, $user_ip)
-    {
-        $prepay_id = self::_refreshPrepayId($order, $user_ip);
-
-        /// $prepay_id = $order->pay_id;
-        /// if (!$prepay_id) {
-        ///     $prepay_id = self::_refreshPrepayId($order, $user_ip);
-        /// } else {
-        ///     $expireTime = new \Datetime($order->expire_time);
-        ///     $diff = $expireTime->getTimestamp() - time();
-        ///     if ($diff < 900) {
-        ///         $prepay_id = self::_refreshPrepayId($order, $user_ip);
-        ///     }
-        /// }
-      
-        return $prepay_id;
-    }
-  
-    public static function _refreshPrepayId($order, $user_ip)
-    {
-        $customer = $order->customer;
-      
-        $postDataXML = Yii::$app->utils->generateUnifiedOrderData($order, $user_ip, $customer->open_id);
-        $resp = Yii::$app->utils->postUnifiedOrderRequest($postDataXML);
-        $respData = Yii::$app->utils->parseResponseXML($resp['body']);
-
-        $order->pay_id = $respData['prepay_id'];
-        $order->status = 'created';
-        $expireTime = (new \DateTime())->add(new \DateInterval('PT7200S'));
-        $order->expire_time = $expireTime->format('Y-m-d H:i:s');
-        $order->save();
-      
-        return $order->pay_id;
-    }
-
     /**
      * Finds the GroupOrderSearch model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
