@@ -8,7 +8,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
-$amount = $order->leader_amount ? $order->leader_amount : 10;
+$amount = $order->leader_amount ? $order->leader_amount : 1;
 $setMaxAmount = $order->max_amount !== null;
 $maxAmount = $setMaxAmount ? $order->max_amount : $item->threshold;
 

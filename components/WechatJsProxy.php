@@ -19,6 +19,10 @@ class WechatJsProxy extends Object
     public $view;
     public $ticket;
 
+    public $scanJs;
+    public $shareJs;
+    public $payJs;
+    
     public function __construct($config = [])
     {
         $this->debug = false;
@@ -50,6 +54,9 @@ wx.config({
     jsApiList: [
         'onMenuShareTimeline',
         'onMenuShareAppMessage',
+        'onMenuShareQQ',
+        'onMenuShareWeibo',
+        'onMenuShareQZone',
         'scanQRCode',
         'chooseWXPay',
     ]
@@ -60,7 +67,7 @@ EOF;
 
     public function setShareInfo($title, $link, $imgUrl, $desc)
     {
-        $shareJs = <<<EOF
+        $this->shareJs = <<<EOF
 var shareData = {
     title: '$title',
     link: '$link',
@@ -72,12 +79,11 @@ var shareData = {
 wx.onMenuShareTimeline(shareData); 
 wx.onMenuShareAppMessage(shareData);
 EOF;
-        $this->view->registerJs($shareJs);
     }
 
     public function scanQRCode($orderID, $buttonID)
     {
-        $scanJs = <<<EOF
+        $this->scanJs = <<<EOF
 var data = {
     needResult: 1,
     scanType: ['qrCode'],
@@ -92,7 +98,6 @@ $('$buttonID').click(function() {
     wx.scanQRCode(data);
 });
 EOF;
-        $this->view->registerJs($scanJs);
     }
 
     public function pay($prepayID, $redirectUrl, $buttonID)
@@ -100,7 +105,7 @@ EOF;
         $timestamp = time();
         $nonceStr = CommonUtility::generateNonce();
         $sign = Yii::$app->wepay->paymentJsSign($timestamp, $nonceStr, $prepayID);
-        $payJs = <<<EOF
+        $this->payJs = <<<EOF
 var paymentData = {
     appId: '$this->appID',
     timestamp: $timestamp,
@@ -115,6 +120,17 @@ $('$buttonID').click(function() {
     wx.chooseWXPay(paymentData);
 });
 EOF;
-        $this->view->registerJs($payJs);
+    }
+
+    public function commit()
+    {
+        $wxReady = <<<EOF
+wx.ready(function() {
+    $this->shareJs
+    $this->scanJs
+    $this->payJs
+});
+EOF;
+        $this->view->registerJs($wxReady);
     }
 }

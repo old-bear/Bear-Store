@@ -14,6 +14,7 @@ $formatter = \Yii::$app->formatter;
 $wejs = new WechatJsProxy(['appID' => Yii::$app->utils->appID,
                            'url' => $url, 'view' => $this]);
 $wejs->pay($order->prepay_id, $redirectUrl, '#start-pay');
+$wejs->commit();
 
 ?>
 

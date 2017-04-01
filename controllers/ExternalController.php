@@ -32,7 +32,7 @@ class ExternalController extends Controller
     
     public function loginImpl()
     {
-        //return Customer::findOne(42);
+        return Customer::findOne(42);
         
         $request = Yii::$app->request;
         $session = Yii::$app->session;

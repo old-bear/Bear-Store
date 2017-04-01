@@ -33,6 +33,7 @@ class GroupOrderController extends ExternalController
                 'actions' => [
                     'create' => ['get', 'post'],
                     'view' => ['get'],
+                    'confirm-delivery' => ['post'],
                     'dispatch' => ['post'],
                 ],
             ],
@@ -103,58 +104,30 @@ class GroupOrderController extends ExternalController
     {
         $order = $this->findModel($id);
         $user = $this->login();
-      
-        $ak = AccessToken::getAccessToken();
-        $ticket = JsapiTicket::getJsapiTicket();
-        $signPackage = Yii::$app->utils->getSignPackage($ak, $ticket);
-      
         return $this->render('view', [
             'model' => $order->item,
             'order' => $order,
             'user' => $user,
-            'signPackage' => $signPackage,
         ]);
     }
   
-    
-    public function actionScanQrcode()
+    public function actionConfirmDelivery()
     {
+        $request = Yii::$app->request;
         $response = Yii::$app->response;
         $response->format = \yii\web\Response::FORMAT_JSON;
-      
-        $request = Yii::$app->request;
-        $msg = '';
-        if ($request->isPost) {
-            $id = $request->post('id');
-            $qrcode_url = $request->post('qrcode_url');
-            
-            if ($id && $qrcode_url && $qrcode_url != '') {           
-                $order = $this->findModel($id);
-                if ($order->hasMember($qrcode_url) == 1) {
-                    $customer = $order->fetchCustomer($qrcode_url);
-                    $customerOrders = $customer->fetchCustomerOrder($id);
-                    foreach( $customerOrders as $customerOrder ) {
-                        $customerOrder->status = 'delivered';
-                        $customerOrder->save();
-                    }
-                  
-                    if ($order->isCompleted()) {
-                        $order->status = 'completed';
-                        $order->save();
-                    }
-                    $msg = 'Success';
-                } else {
-                    $msg = 'Customer is not a member of this group order';
-                }
-              
-            } else {
-              $msg = 'Invalid order id or invalid qr code url';
-            }
-        } else {
-           $msg = 'Not a post request';
+
+        $groupOrder = $this->findModel($request->post('id'));
+        $user = $this->login();
+        if ($groupOrder->leader_id != $user->id) {
+            throw new ForbiddenHttpException('只有团长才能确认收货!');
         }
-      
-        return ['errMsg' => $msg];
+
+        if ($groupOrder->status == 'delivering') {
+            $groupOrder->status = 'delivered';
+            $groupOrder->save();
+        }
+        return ['errMsg' => 'Success'];
     }
 
     public function actionDispatch($id)

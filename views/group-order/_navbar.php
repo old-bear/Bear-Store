@@ -16,6 +16,8 @@ $favorite = Favorite::findOne(['resource_type' => $favType,
                                'resource_id' => $favID]);
 $favoriteID = ($favorite ? $favorite->id : '');
 
+$orderID = ($order ? $order->id : '');
+
 $navbtnJs = <<<EOF
 $('#join-order').click(function() {
     $('#join-form').submit();
@@ -26,6 +28,19 @@ $('#share').click(function() {
 });
 $('#share-dialog-ok').click(function() {
     $('#share-dialog').hide();
+});
+
+$('#confirm-delivery').click(function() {
+    $('#confirm-dialog').show();
+});
+$('#cancel-button').click(function() {
+    $('#confirm-dialog').hide();
+});
+$('#confirm-button').click(function() {
+    $.post('/group-order/confirm-delivery', {'id': '$orderID'},
+           function(res) {
+               location.reload();
+           });
 });
 
 function setFavoriteCss() {
@@ -148,7 +163,7 @@ if ($order && $order->status == 'created') {
 } else {
     $navbtnClass .= ' col-xs-6';
 }
-if ($order && ($order->status == 'delivering'
+if ($order && (($order->status == 'delivering' && $order->leader->id != $user->id)
                || $order->status == 'cancelled' || $order->status == 'completed'
                || ($order->status == 'delivered' && $order->leader->id != $user->id))) {
     $navbtnClass .= ' disabled';
@@ -179,8 +194,13 @@ $orderCreateURL = Url::to(['group-order/create', 'itemID' => $model->id], true);
                                                  "class" => $navbtnClass]) ?>
   
     <?php elseif (strcmp($order->status, 'delivering') == 0): ?>
-        <?= Html::a('已成团，待收货', '#', ["class" => $navbtnClass]) ?>
-  
+        <?php if ($order->leader->id == $user->id): ?>
+            <?= Html::a('确认收货', 'javascript:;', ['id' => 'confirm-delivery',
+                                                     "class" => $navbtnClass]) ?>
+        <?php else: ?>
+            <?= Html::a('已成团，待收货', '#', ["class" => $navbtnClass]) ?>
+        <?php endif; ?>
+        
     <?php elseif (strcmp($order->status, 'delivered') == 0): ?>
         <?php if ($order->leader->id == $user->id): ?>
             <?= Html::a('扫一扫发货', 'javascript:;', ['id' => 'scan-qrcode',
@@ -206,6 +226,22 @@ $orderCreateURL = Url::to(['group-order/create', 'itemID' => $model->id], true);
         <div class="weui-dialog__bd">请点击右上角微信菜单，选择分享，邀请小伙伴一起拼团吧 ^_^</div>
         <div class="weui-dialog__ft">
             <a href="javascript:;" class="weui-dialog__btn weui-dialog__btn_primary" id="share-dialog-ok">确定</a>
+        </div>
+    </div>
+</div>
+
+<div style="display: none;" id="confirm-dialog">
+    <div class="weui-mask"></div>
+    <div class="weui-dialog">
+        <div class="weui-dialog__hd">
+            <div class="weui-dialog__title">确认收货</div>
+        </div>
+        <div class="weui-dialog__bd">请清点货物完好、清点数量正确</div>
+        <div class="weui-dialog__ft">
+            <a href="javascript:;" id="cancel-button"
+               class="weui-dialog__btn weui-dialog__btn_default">取消</a>
+            <a href="javascript:;" id="confirm-button"
+               class="weui-dialog__btn weui-dialog__btn_primary">确认</a>
         </div>
     </div>
 </div>

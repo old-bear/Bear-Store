@@ -72,76 +72,6 @@ class CommonUtility extends Object
         return self::sendHttpRequest('POST', $url, 'QRCODE', true, 1000, 0, [], $data, 'json');
     }
   
-    // 微信JSAPI(configuration)签名
-    public function getSignPackage(string $ak, string $ticket)
-    {
-        // 注意 URL 一定要动态获取，不能 hardcode.
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-        $url = "$protocol$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-
-        $timestamp = time();
-        $nonceStr = self::createNonceStr();
-
-        // 这里参数的顺序要按照 key 值 ASCII 码升序排序
-        $string = "jsapi_ticket=$ticket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
-
-        $signature = sha1($string);
-
-        $signPackage = array(
-            "appId"     => $this->appID,
-            "nonceStr"  => $nonceStr,
-            "timestamp" => $timestamp,
-            "url"       => $url,
-            "signature" => $signature,
-            "rawString" => $string
-        );
-        return $signPackage; 
-    }
-    
-    // 微信支付JSAPI签名
-    public function getWxPaySignPackage($prepay_id)
-    {
-        $timestamp = time();
-        $nonceStr = self::createNonceStr();
-        $package = "prepay_id=" . $prepay_id;
-        
-        $string = "appId=$this->appID&nonceStr=$nonceStr&package=$package&signType=MD5&timeStamp=$timestamp&key=$this->paymentKey";
-      
-        $paySign = strtoupper(md5($string));
-      
-        $paySignPackage = array(
-            'timestamp' => $timestamp,
-            'nonceStr' => $nonceStr,
-            'package' => $package,
-            'paySign' => $paySign
-        );
-      
-        return $paySignPackage;
-    }
-  
-    public function generateUnifiedOrderData($order, $user_ip, $openid)
-    {
-        $nonceStr =  self::createNonceStr();
-        $data = array(
-            "appid" => $this->appID,
-            "mch_id" => $this->merchantID,
-            "nonce_str" => $nonceStr,
-            "body" => "从前有个团-" . $order->item->name,
-            "out_trade_no" => $order->id,
-            "total_fee" => (int)($order->price * 100),
-            "spbill_create_ip" => $user_ip,
-            "notify_url" => "http://www.52youtuan.com/customer-order/notify",
-            "trade_type" => "JSAPI",
-            "openid" => $openid
-        );
-      
-        $sign = self::generatePaymentSignature($data, $this->paymentKey);
-        $data['sign'] = $sign;
-      
-        $xml = new \SimpleXMLElement('<xml></xml>');
-        self::array_to_xml($data, $xml);
-        return $xml;
-    }
   
     public function generateRefundData($order)
     {
@@ -165,16 +95,6 @@ class CommonUtility extends Object
         return $xml;
     }
   
-    public function postUnifiedOrderRequest($xml)
-    {
-        $url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-        $body = array(
-            "xml" => $xml,
-        );
-        return self::sendHttpRequest('POST', $url, 'UNIFIEDORDER', false, 
-                              1000, 0, [], $body, 'xml');
-    }
-  
     public function postRefundRequest($xml)
     {
         $url = "https://api.mch.weixin.qq.com/secapi/pay/refund";
@@ -183,37 +103,6 @@ class CommonUtility extends Object
             'Content-Type' => 'text/xml',
         );
         return self::curl_post_ssl($url, $vars, 30, $aHeader);
-    }
-  
-    public function wechatNotifyResponse(string $return_code, string $return_msg)
-    {
-        $data = array(
-            'return_code' => $return_code,
-            'return_msg' => $return_msg,
-        );
-      
-        $xml = new \SimpleXMLElement('<xml></xml>');
-        self::array_to_xml($data, $xml, true);  
-        
-        return $xml->asXML();
-    }
-  
-    public function parseResponseXML(string $str)
-    {
-        $xml = simplexml_load_string($str, 'SimpleXMLElement', LIBXML_NOCDATA);  
-        $xml_file_arr = json_decode(json_encode($xml), true);
-        return $xml_file_arr;
-    }
-  
-    public static function array_to_xml( $data, &$xml_data, $add_cdata = false) {
-        foreach( $data as $key => $value ) {
-            if ($add_cdata) {
-                $val = '![CDATA[' . htmlspecialchars("$value") . ']]';
-                $xml_data->addChild("$key", $val);
-            } else {
-                $xml_data->addChild("$key", htmlspecialchars("$value"));
-            }
-        }
     }
   
     public static function array2xml(array $data,
@@ -246,16 +135,6 @@ class CommonUtility extends Object
                                             'SimpleXMLElement', LIBXML_NOCDATA);  
     }
     
-    public static function createNonceStr($length = 16)
-    {
-        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        $str = "";
-        for ($i = 0; $i < $length; $i++) {
-          $str .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
-        }
-        return $str;
-    }
-  
     public static function generateNonce($length = 16)
     {
         $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

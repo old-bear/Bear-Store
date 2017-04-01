@@ -19,7 +19,6 @@ $groupCss = <<<EOF
 }
 
 #group-detail hr {
-    width: 200%;
     margin-top: 6px;
     margin-bottom: 7px;
 }
@@ -37,27 +36,32 @@ $groupCss = <<<EOF
     margin-bottom: 8px;
 }
 
-.member-label {
-    margin-left: -15px;
-    padding-top: 15px;
-}
-
 .order-status {
     color: green;
     padding-top: 15px;
 }
+
+.amount-badge {
+    position: absolute;
+    top: -0.4em;
+    left: 55px;
+}
 EOF;
 $this->registerCss($groupCss);
 
-$members = [$order->leader_id => true];
+$members = [$order->leader_id => ['amount' => 0]];
 foreach ($order->getCustomerOrders()->all() as $co) {
     if (!isset($members[$co->customer_id])) {
         // Only need to check one customer order's status since we set all
         // customer orders of a user to delivered when leader scans the QRCode
-        $members[$co->customer_id] = ['complete' => $co->status == 'delivered',
-                                      'user' => Customer::findOne($co->customer_id)];
+        $members[$co->customer_id] = ['amount' => $co->amount,
+                                      'complete' => $co->status == 'delivered',
+                                      'user' => Customer::findOne($co->customer_id)];                                      
+    } else {
+        $members[$co->customer_id]['amount'] += $co->amount;
     }
 }
+$leaderAmount = $members[$order->leader_id]['amount'];
 unset($members[$order->leader_id]);
 
 ?>
@@ -66,7 +70,9 @@ unset($members[$order->leader_id]);
     <div id="leader" class="row">
         <div class="col-xs-2 item-label">成员</div>
         <div class="col-xs-3">
-            <?= Html::img($order->leader->head_img_path, ['class'=>'img-rounded']) ?>
+            <?= Html::img($order->leader->head_img_path) ?>
+            <?= Html::tag('span', $leaderAmount,
+                          ['class' => 'weui-badge amount-badge']) ?>
         </div>
         <div class="col-xs-4">
             <div class="row"><?= Html::encode($order->leader->nick_name) ?></div>
@@ -82,10 +88,14 @@ unset($members[$order->leader_id]);
         <div class="row member-row">
             <div class="col-xs-2 item-label"></div>
             <div class="col-xs-3">
-                <?= Html::img($member['user']->head_img_path, ['class'=>'img-circle']) ?>
+                <?= Html::img($member['user']->head_img_path) ?>
+                <?= Html::tag('span', $member['amount'],
+                              ['class' => 'weui-badge amount-badge']) ?>
             </div>
             <div class="col-xs-5 member-label">
-                <?= Html::encode($member['user']->nick_name) ?>
+                <div class="row"><?= Html::encode($member['user']->nick_name) ?></div>
+                <hr class="row"></hr>
+                <div class="row"><?= Html::encode($member['user']->phone) ?></div>
             </div>
             <?php if ($member['complete']): ?>
                 <div class="col-xs-2 order-status">

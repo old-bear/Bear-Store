@@ -17,6 +17,7 @@ $wejs = new WechatJsProxy(['appID' => Yii::$app->utils->appID,
 $wejs->setShareInfo($model->name . ' - 快来友团拼团吧', $url,
                     Url::to($model->images[0]->photo_path, true), $model->description);
 $wejs->scanQRCode($order->id, '#scan-qrcode');
+$wejs->commit();
 
 $orderCss = <<<EOF
 #item-order {

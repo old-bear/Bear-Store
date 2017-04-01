@@ -4,9 +4,18 @@
 /* @var $model app\models\Item */
 /* @var $order app\models\GroupOrder */
 
+use yii\helpers\Url;
 use yii\helpers\Html;
+use app\components\WechatJsProxy;
 
+$url = Url::current([], true);
 $formatter = \Yii::$app->formatter;
+
+$wejs = new WechatJsProxy(['appID' => Yii::$app->utils->appID,
+                           'url' => $url, 'view' => $this]);
+$wejs->setShareInfo($model->name . ' - 快来友团拼团吧', $url,
+                    Url::to($model->images[0]->photo_path, true), $model->description);
+$wejs->commit();
 
 $infoCss = <<<EOF
 #item-info {

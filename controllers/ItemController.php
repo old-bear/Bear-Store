@@ -37,6 +37,7 @@ class ItemController extends ExternalController
      */
     public function actionView($id)
     {
+        $user = $this->login();   // Favroite needs user information
         $model = ItemSearch::findOne($id);
         if ($model) {
             return $this->render('view', [
