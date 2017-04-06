@@ -107,11 +107,4 @@ class ExternalController extends Controller
         $this->redirect(Yii::$app->utils->generateOAuthURL($url, 'snsapi_userinfo'));
         Yii::$app->end();
     }
-  
-    public function jsonResponseGenerator(string $msg)
-    {
-        return json_encode(array(
-            'errMsg' => $msg,
-        ));
-    }
 }

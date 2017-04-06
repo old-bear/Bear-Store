@@ -5,12 +5,12 @@ namespace app\models;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Item;
+use app\models\CustomerOrder;
 
 /**
- * ItemSearch represents the model behind the search form about `app\models\Item`.
+ * CustomerOrderSearch represents the model behind the search form about `app\models\CustomerOrder`.
  */
-class ItemSearch extends Item
+class CustomerOrderSearch extends CustomerOrder
 {
     /**
      * @inheritdoc
@@ -18,8 +18,8 @@ class ItemSearch extends Item
     public function rules()
     {
         return [
-            [['id', 'category_i', 'category_ii', 'amount', 'threshold', 'delivery_address_id', 'delivery_duration'], 'integer'],
-            [['name', 'specification', 'description', 'due_date', 'delivery_date_start', 'delivery_date_end'], 'safe'],
+            [['id', 'item_id', 'customer_id', 'group_order_id', 'amount'], 'integer'],
+            [['create_time', 'prepay_id', 'transaction_id', 'status', 'expire_time', 'last_modified_time'], 'safe'],
             [['price'], 'number'],
         ];
     }
@@ -42,7 +42,7 @@ class ItemSearch extends Item
      */
     public function search($params)
     {
-        $query = Item::find();
+        $query = CustomerOrder::find();
 
         // add conditions that should always apply here
 
@@ -61,21 +61,19 @@ class ItemSearch extends Item
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
-            'category_i' => $this->category_i,
-            'category_ii' => $this->category_ii,
-            'price' => $this->price,
+            'item_id' => $this->item_id,
+            'customer_id' => $this->customer_id,
+            'group_order_id' => $this->group_order_id,
+            'create_time' => $this->create_time,
             'amount' => $this->amount,
-            'threshold' => $this->threshold,
-            'due_date' => $this->due_date,
-            'delivery_address_id' => $this->delivery_address_id,
-            'delivery_duration' => $this->delivery_duration,
-            'delivery_date_start' => $this->delivery_date_start,
-            'delivery_date_end' => $this->delivery_date_end,
+            'price' => $this->price,
+            'expire_time' => $this->expire_time,
+            'last_modified_time' => $this->last_modified_time,
         ]);
 
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'specification', $this->specification])
-            ->andFilterWhere(['like', 'description', $this->description]);
+        $query->andFilterWhere(['like', 'prepay_id', $this->prepay_id])
+            ->andFilterWhere(['like', 'transaction_id', $this->transaction_id])
+            ->andFilterWhere(['like', 'status', $this->status]);
 
         return $dataProvider;
     }

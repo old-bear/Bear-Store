@@ -77,7 +77,17 @@ class Customer extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => '#',
+            'open_id' => '微信ID',
+            'subscribe_time' => '订阅时间',
+            'nick_name' => '昵称',
+            'head_img_path' => '头像',
+            'sexuality' => '性别',
+            'balance' => '余额',
+            'bonus_points' => '积分',
             'phone' => '手机号',
+            'email' => '邮箱',
+            'qrcode_ticket' => '二维码',
             'inputCaptcha' => '验证码',
         ];
     }

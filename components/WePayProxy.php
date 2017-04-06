@@ -13,6 +13,7 @@ class WePayProxy extends Object
     public $appID;
     public $merchantID;
     public $paymentKey;
+    public $apiclientCert;
     
     public function unifiedOrder(CustomerOrder $order, $userIp, $openID)
     {
@@ -29,13 +30,35 @@ class WePayProxy extends Object
             "trade_type" => "JSAPI",
             "openid" => $openID,
         ];
-        $sign = CommonUtility::generatePaymentSignature($req, $this->paymentKey);
-        $req['sign'] = $sign;
+        $req['sign'] = $this->paymentSign($req);
 
         $url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
         $xml = CommonUtility::array2xml($req);
         $res = CommonUtility::sendHttpRequest("POST", $url, 'UNIFIED_ORDER',
                                               false, 1000, 0, [], $xml, 'xml');
+        return CommonUtility::xml2array($res['body']);
+    }
+
+    public function refund(CustomerOrder $order)
+    {
+        $nonceStr = CommonUtility::generateNonce();
+        $req = [
+            "appid" => $this->appID,
+            "mch_id" => $this->merchantID,
+            "nonce_str" => $nonceStr,
+            "transaction_id" => $order->transaction_id,
+            "out_refund_no" => $order->id,
+            "total_fee" => (int)($order->price * 100),
+            "refund_fee" => (int)($order->price * 100),
+            "op_user_id" => $this->merchantID,
+        ];
+        $req['sign'] = $this->paymentSign($req);
+
+        $url = "https://api.mch.weixin.qq.com/secapi/pay/refund";
+        $xml = CommonUtility::array2xml($req);
+        $res = CommonUtility::sendHttpRequest("POST", $url, 'REFUND', false,
+                                              1000, 0, [], $xml, 'xml',
+                                              $this->apiclientCert);
         return CommonUtility::xml2array($res['body']);
     }
 

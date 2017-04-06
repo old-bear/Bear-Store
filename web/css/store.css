@@ -1,0 +1,269 @@
+@font-face {
+    font-family: "Yuppy SC";
+    src: url('../YuppySC-Regular.ttf');
+}
+
+html.touch .btn:hover {
+    // pointer-events: none !important;
+}
+
+html,
+body {
+    font-family: sans-serif;
+    height: 100%;
+}
+
+#uc {
+    width: 85%;
+}
+
+.wrap {
+    min-height: 100%;
+    height: auto;
+    margin: 0 auto -60px;
+    padding: 0 0 60px;
+}
+
+.wrap > .container {
+    padding: 70px 15px 20px;
+}
+
+.footer {
+    height: 60px;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+}
+
+.jumbotron { 
+    text-align: center; 
+    background-color: transparent; 
+    padding-top: 10px; 
+    padding-bottom: 10px; 
+    margin-bottom: 10px; 
+} 
+
+.jumbotron .btn {
+    font-size: 21px;
+    padding: 14px 24px;
+}
+
+.not-set {
+    color: #c55;
+    font-style: italic;
+}
+
+/* add sorting icons to gridview sort links */
+a.asc:after, a.desc:after {
+    position: relative;
+    top: 1px;
+    display: inline-block;
+    font-family: 'Glyphicons Halflings';
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    padding-left: 5px;
+}
+
+a.asc:after {
+    content: /*"\e113"*/ "\e151";
+}
+
+a.desc:after {
+    content: /*"\e114"*/ "\e152";
+}
+
+.sort-numerical a.asc:after {
+    content: "\e153";
+}
+
+.sort-numerical a.desc:after {
+    content: "\e154";
+}
+
+.sort-ordinal a.asc:after {
+    content: "\e155";
+}
+
+.sort-ordinal a.desc:after {
+    content: "\e156";
+}
+
+.grid-view th {
+    white-space: nowrap;
+}
+
+.hint-block {
+    display: block;
+    margin-top: 5px;
+    color: #999;
+}
+
+.error-summary {
+    color: #a94442;
+    background: #fdf7f7;
+    border-left: 3px solid #eed3d7;
+    padding: 10px 20px;
+    margin: 0 0 15px 0;
+}
+
+div.required label.control-label:after {
+    content: "*";
+    color: red;
+}
+
+
+
+
+
+.store-viewport {
+    font-family: sans-serif;
+    max-width: 640px;
+    margin: 0px auto;
+}
+
+.row.separator {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    height: 12px;
+    background-color: #eeeeee;
+}
+
+.form-group, .help-block {
+    margin-bottom: 0px;
+}
+
+img.img-responsive {
+    width: 100%;
+}
+
+.item-label {
+    font-size: 12px;
+    font-family: sans-serif;
+    color: grey;
+    padding-right: 0px;
+}
+
+.disabled {
+    pointer-events: none;
+    cursor: default;
+}
+
+
+.store-index {
+    margin: 20px auto;
+    padding: 0;
+    text-align: center;
+}
+
+#user-profile {
+    padding: 0; 
+}
+
+#user-profile .list-group {
+    margin: 0;
+}
+
+#user-profile .list-group .list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+#user-profile .list-group .list-group-item:first-child {
+    border-top: 0;
+}
+
+#user-profile .list-group .list-group-item:last-child {
+    border-bottom: 0;
+}
+
+#user-profile .list-group .list-group-item a {
+    color: #333;
+}
+
+#user-profile .list-group .list-group-item a:hover {
+    text-decoration: none;
+}
+
+#user-profile .contact-info {
+    font-size: 12px;
+}
+
+.text-grey {
+    color: grey;
+}
+
+
+.order-nav-container {
+    overflow: auto;
+}
+
+.order-nav {
+    margin: 10px 0;
+    min-width: 530px;
+}
+
+.order-nav li a {
+    border-radius: 0;
+}
+
+.order-delivery-date,
+.order-address {
+    font-size: 14px;
+    color: #333;
+}
+
+#prepay_id {
+    word-wrap: break-word;
+    word-break: normal;
+}
+
+#qrcode-toggle-btn {
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    border: 0;
+    background-color: white;
+    color: #333;
+}
+
+.modal-body {
+    text-align: center;
+}
+
+.modal-body img {
+    width: 100%;
+    height: auto;
+}
+
+.delivered-row {
+    background-color: floralwhite;
+}
+
+.delivered-icon {
+    color: green;
+    margin-left: 20px;
+    margin-top: 4px;
+}
+
+.hidden-row {
+   display: none;
+}
+
+#display-all {
+    width: 100%;
+    color: #eee;
+    font-size: 12px;
+}
+
+.remove-padding {
+    padding: 0;
+}
+
+.remove-margin {
+    margin: 0;
+}
+
+.customer-order-list {
+    color: #333;
+}

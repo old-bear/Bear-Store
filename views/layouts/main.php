@@ -8,21 +8,16 @@ use yii\bootstrap\Nav;
 use yii\bootstrap\NavBar;
 use yii\widgets\Breadcrumbs;
 use app\assets\AppAsset;
-use app\assets\WeAsset;
-use app\assets\SwiperAsset;
 use app\assets\CountdownAsset;
 use app\assets\TouchSpinAsset;
 use app\assets\DatepickerAsset;
 use app\assets\CascadingDropdownAsset;
 
-WeAsset::register($this);
-SwiperAsset::register($this);
-CountdownAsset::register($this);
-TouchSpinAsset::register($this);
 DatepickerAsset::register($this);
 CascadingDropdownAsset::register($this);
 AppAsset::register($this);
 ?>
+
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app->language ?>">

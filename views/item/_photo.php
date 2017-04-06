@@ -27,7 +27,6 @@ $photoCss = <<<EOF
     margin-left: -15px;
     margin-right: -15px;
     margin-bottom: -5px;
-    background-color: #eeeeee;
 }
 
 .swiper-pagination-bullet-active {
@@ -42,8 +41,8 @@ $this->registerCss($photoCss);
     <div class="swiper-wrapper">
     <?php
     foreach ($model->images as $img) {
-        echo '<div class="swiper-slide">';
-        echo '<img class="img-responsive" src="' . $img->photo_path . '"/>';
+        echo '<div class="swiper-slide text-center">';
+        echo '<img src="' . $img->photo_path . '"/>';
         echo '</div>';
     }
     ?> 

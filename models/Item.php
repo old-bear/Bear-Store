@@ -68,12 +68,20 @@ class Item extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => '#',
+            'category_i' => '一级类别',
+            'category_ii' => '二级类别',
             'name' => '名称',
             'price' => '价格',
             'amount' => '数量',
             'threshold' => '最低成团数量',
             'specification' => '规格',
             'description' => '详情',
+            'due_date' => '截团日期',
+            'delivery_address_id' => '送货范围',
+            'delivery_duration' => '预计运输耗时',
+            'delivery_date_start' => '送货开始日期',
+            'delivery_date_end' => '送货截止日期',
         ];
     }
 

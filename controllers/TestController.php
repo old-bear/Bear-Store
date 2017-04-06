@@ -82,8 +82,8 @@ class TestController extends ExternalController
                      'transaction_id' => '4003532001201703284987221573',
         ];
 
-        return ['sign1'=>Yii::$app->wepay->paymentSign($body),
-                'sign' => '9490B3FC58380313EC16393D24F420EA'];
+        $co = CustomerOrder::findOne(141);
+        return Yii::$app->wepay->refund($co);
     }
 
     public function actionTest1()
@@ -96,7 +96,7 @@ class TestController extends ExternalController
         $arr = ['a'=>1, 'b'=>['c'=>'d']];
         $xml = CommonUtility::array2xml($arr);
 
-        return $item->deliveryAddress->id;
+        return Yii::$app->wepay->apiclientCert;
     }
 
     public function actionCreate()

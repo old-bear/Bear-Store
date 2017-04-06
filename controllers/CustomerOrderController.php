@@ -43,6 +43,15 @@ class CustomerOrderController extends ExternalController
         ];
     }
 
+    public function beforeAction($action)
+    {
+        if (in_array($action->id, ['notify'])) {
+            // Wepay notify doesn't carry csrf token
+            $this->enableCsrfValidation = false;
+        }
+        return parent::beforeAction($action);
+    }
+    
     public function actionCreate($groupOrderID)
     {
         $request = Yii::$app->request;

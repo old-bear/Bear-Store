@@ -5,12 +5,12 @@ namespace app\models;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Item;
+use app\models\GroupOrder;
 
 /**
- * ItemSearch represents the model behind the search form about `app\models\Item`.
+ * GroupOrderSearch represents the model behind the search form about `app\models\GroupOrder`.
  */
-class ItemSearch extends Item
+class GroupOrderSearch extends GroupOrder
 {
     /**
      * @inheritdoc
@@ -18,9 +18,8 @@ class ItemSearch extends Item
     public function rules()
     {
         return [
-            [['id', 'category_i', 'category_ii', 'amount', 'threshold', 'delivery_address_id', 'delivery_duration'], 'integer'],
-            [['name', 'specification', 'description', 'due_date', 'delivery_date_start', 'delivery_date_end'], 'safe'],
-            [['price'], 'number'],
+            [['id', 'item_id', 'leader_id', 'leader_amount', 'max_amount', 'delivery_address_id'], 'integer'],
+            [['create_time', 'delivery_date', 'arrival_date', 'status', 'last_modified_time'], 'safe'],
         ];
     }
 
@@ -42,7 +41,7 @@ class ItemSearch extends Item
      */
     public function search($params)
     {
-        $query = Item::find();
+        $query = GroupOrder::find();
 
         // add conditions that should always apply here
 
@@ -61,21 +60,18 @@ class ItemSearch extends Item
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
-            'category_i' => $this->category_i,
-            'category_ii' => $this->category_ii,
-            'price' => $this->price,
-            'amount' => $this->amount,
-            'threshold' => $this->threshold,
-            'due_date' => $this->due_date,
+            'item_id' => $this->item_id,
+            'leader_id' => $this->leader_id,
+            'create_time' => $this->create_time,
+            'delivery_date' => $this->delivery_date,
+            'arrival_date' => $this->arrival_date,
+            'leader_amount' => $this->leader_amount,
+            'max_amount' => $this->max_amount,
             'delivery_address_id' => $this->delivery_address_id,
-            'delivery_duration' => $this->delivery_duration,
-            'delivery_date_start' => $this->delivery_date_start,
-            'delivery_date_end' => $this->delivery_date_end,
+            'last_modified_time' => $this->last_modified_time,
         ]);
 
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'specification', $this->specification])
-            ->andFilterWhere(['like', 'description', $this->description]);
+        $query->andFilterWhere(['like', 'status', $this->status]);
 
         return $dataProvider;
     }

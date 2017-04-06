@@ -66,8 +66,17 @@ class GroupOrder extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => '#',
+            'item_id' => '商品',
+            'leader_id' => '团长',
+            'create_time' => '创建时间',
+            'delivery_date' => '送货日期',
             'arrival_date' => '到货日期',
             'delivery_address_id' => '送货地址',
+            'leader_amount' => '团长数量',
+            'max_amount' => '上限数量',
+            'status' => '状态',
+            'last_modified_time' => '上次修改时间',
         ];
     }
 
